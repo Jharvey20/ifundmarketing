@@ -3,11 +3,18 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from models import db, User, ActivationCode, Withdrawal, AdminFund
 import random
 import time
-# ======================
+import os
+
+# ========================
 # CREATE FLASK APP
-# ======================
+# ========================
 app = Flask(__name__)
 
+# SECRET KEY (REQUIRED FOR SESSION)
+app.secret_key = os.environ.get(
+    "SECRET_KEY",
+    "e1864bdd86d874f042c737bddb0edd1b06a838be3a75f1942efb473294ded90d"
+)
 def admin_required():
     if "user" not in session:
         return False
