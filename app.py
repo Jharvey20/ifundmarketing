@@ -491,8 +491,6 @@ def withdraw():
         db.session.add(w)
         db.session.commit()
 
-        )
-
         flash("Withdrawal request submitted!", "success")
         return redirect("/dashboard")
 
