@@ -48,15 +48,33 @@
 
 {% with messages = get_flashed_messages(with_categories=true) %}
   {% for category, message in messages %}
+    
     {% if message == "login_success" %}
-      <div class="modal-overlay show">
-        <div class="success-modal">
+      <div class="success-overlay">
+        <div class="success-card page-enter">
           <h2>🎊 Welcome Back!</h2>
-          <p>Login successful</p>
-          <a href="/dashboard" class="modal-btn">Continue</a>
+          <p>Login successful.</p>
+          <a href="/dashboard">
+            <button>Continue</button>
+          </a>
         </div>
       </div>
     {% endif %}
+
+    {% if message == "signup_success" %}
+      <div class="success-overlay">
+        <div class="success-card page-enter">
+          <h2>🎉 Registration Complete</h2>
+          <p>Your account has been created.</p>
+          <a href="/login">
+            <button>Back to Login</button>
+          </a>
+        </div>
+      </div>
+    {% endif %}
+
+  {% endfor %}
+{% endwith %}
 
 </body>
 </html>
