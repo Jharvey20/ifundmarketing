@@ -11,3 +11,7 @@ __pycache__/
 # binaries
 ngrok
 *.zip
+
+*.db
+instance/
+__pycache__/
