@@ -5,6 +5,7 @@ import random
 import time
 import os
 import requests
+from messenger_bot import handle_webhook
 
 # ========================
 # CREATE FLASK APP
@@ -39,6 +40,18 @@ app.config["SQLALCHEMY_DATABASE_URI"] = database_url
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 db.init_app(app)
+
+
+def send_message(psid, text):
+    url = "https://graph.facebook.com/v18.0/me/messages"
+    headers = {"Content-Type": "application/json"}
+    payload = {
+        "recipient": {"id": psid},
+        "message": {"text": text},
+        "messaging_type": "RESPONSE"
+    }
+    params = {"access_token": PAGE_ACCESS_TOKEN}
+    requests.post(url, headers=headers, params=params, json=payload)
 
 # ==========================
 # ADMIN ROUTES
@@ -593,6 +606,8 @@ def send_message(psid, text):
     params = {"access_token": PAGE_ACCESS_TOKEN}
     requests.post(url, headers=headers, params=params, json=payload)
 
+VERIFY_TOKEN = os.getenv("VERIFY_TOKEN")
+
 @app.route("/webhook", methods=["GET"])
 def verify_webhook():
     mode = request.args.get("hub.mode")
@@ -603,24 +618,11 @@ def verify_webhook():
         return challenge, 200
     return "Forbidden", 403
 
+
 @app.route("/webhook", methods=["POST"])
 def webhook():
     data = request.get_json()
-
-    for entry in data.get("entry", []):
-        for event in entry.get("messaging", []):
-            sender_id = event["sender"]["id"]
-
-            if "message" in event and "text" in event["message"]:
-                text = event["message"]["text"].lower()
-
-                if text == "hi" or text == "hello":
-                    send_message(sender_id, "👋 Welcome to iFund Marketing!\n\nType TASK to start.")
-                elif text == "task":
-                    send_message(sender_id, "🧮 TASK 1:\nSolve: 12 + 8\nReply with the answer.")
-                else:
-                    send_message(sender_id, "❓ I didn't understand that.\nType TASK to start.")
-
+    handle_webhook(data)
     return "ok", 200
 
 # ======================
