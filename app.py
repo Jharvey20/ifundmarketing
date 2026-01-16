@@ -227,6 +227,10 @@ def add_funds():
 # ROUTES
 # ======================
 
+@app.route("/")
+def home():
+    return redirect("/signup")
+
 @app.route("/signup", methods=["GET", "POST"])
 def signup():
     # STORE REFERRER ON FIRST VISIT
