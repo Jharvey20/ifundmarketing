@@ -200,3 +200,51 @@ button:disabled {
     transform: translateY(0) scale(1);
   }
 }
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: .3s;
+  z-index: 999;
+}
+
+.modal-overlay.show {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.success-modal {
+  background: #111;
+  color: #fff;
+  padding: 30px;
+  width: 90%;
+  max-width: 360px;
+  border-radius: 18px;
+  text-align: center;
+  animation: pop 0.4s ease;
+}
+
+.success-modal h2 {
+  margin-bottom: 10px;
+}
+
+.modal-btn {
+  display: inline-block;
+  margin-top: 20px;
+  padding: 12px 20px;
+  background: linear-gradient(135deg,#7f5cff,#a855f7);
+  color: #fff;
+  border-radius: 30px;
+  text-decoration: none;
+  font-weight: bold;
+}
+
+@keyframes pop {
+  from { transform: scale(.8); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}

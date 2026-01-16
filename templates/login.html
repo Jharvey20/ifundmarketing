@@ -46,5 +46,17 @@
 </div>
 {% endif %}
 
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% for category, message in messages %}
+    {% if message == "login_success" %}
+      <div class="modal-overlay show">
+        <div class="success-modal">
+          <h2>🎊 Welcome Back!</h2>
+          <p>Login successful</p>
+          <a href="/dashboard" class="modal-btn">Continue</a>
+        </div>
+      </div>
+    {% endif %}
+
 </body>
 </html>
