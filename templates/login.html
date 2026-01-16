@@ -33,5 +33,18 @@
   </div>
 </div>
 
+{% if success %}
+<div class="success-overlay">
+  <div class="success-card page-enter">
+    <h2>✅ {{ success_title }}</h2>
+    <p>{{ success_message }}</p>
+
+    <a href="{{ success_link }}">
+      <button>{{ success_button }}</button>
+    </a>
+  </div>
+</div>
+{% endif %}
+
 </body>
 </html>
