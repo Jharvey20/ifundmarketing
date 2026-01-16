@@ -24,18 +24,18 @@ def admin_required():
 # ======================
 # CONFIGURATION
 # ======================
-app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///database.db"
+import os
+
+database_url = os.environ.get("DATABASE_URL")
+
+if not database_url:
+    raise RuntimeError("DATABASE_URL is not set")
+
+if database_url.startswith("postgres://"):
+    database_url = database_url.replace("postgres://", "postgresql://")
+
+app.config["SQLALCHEMY_DATABASE_URI"] = database_url
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
-app.config["SQLALCHEMY_DATABASE_URI"] = \
-"sqlite:////data/data/com.termux/files/home/mathbot_clone/instance/database.db"
-
-# ======================
-# INIT DATABASE
-# ======================
-db.init_app(app)
-
-with app.app_context():
-    db.create_all()
 
 # ==========================
 # ADMIN ROUTES
