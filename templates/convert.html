@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="card">
+  <h2>Convert Points</h2>
+  <p>You can convert <b>200 points</b> into cash.</p>
+</div>
+
+<div class="card">
+  <p><strong>Your Points:</strong> {{ user.points }}</p>
+  <p><strong>Cash Balance:</strong> ₱{{ "%.2f"|format(user.cash_balance) }}</p>
+
+  {% for msg in get_flashed_messages() %}
+    <div class="flash">{{ msg }}</div>
+  {% endfor %}
+
+  <form method="POST" action="/convert">
+    <button {% if user.points < 200 %}disabled{% endif %}>
+      Convert 200 Points
+    </button>
+  </form>
+
+  {% if user.points < 200 %}
+    <p style="color:#dc2626; margin-top:10px;">
+      You need at least 200 points to convert.
+    </p>
+  {% endif %}
+</div>
+
+{% endblock %}

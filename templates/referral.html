@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block content %}
+
+<h2>Referral</h2>
+
+<p>Earn ₱50 for every successful invite.</p>
+
+<p><strong>Your Link:</strong></p>
+<input type="text"
+value="{{ request.url_root }}signup?ref={{ user.user_id }}"
+readonly style="width:100%;">
+
+<p>Total Referrals: {{ user.referrals }}</p>
+<p>Total Referral Earnings: ₱{{ "%.2f"|format(user.referral_balance) }}</p>
+
+{% endblock %}

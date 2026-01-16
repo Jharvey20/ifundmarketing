@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+  <title>iFund Marketing</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+<!-- TOP BAR -->
+<div class="topbar">
+  <span class="burger" onclick="toggleMenu()">☰</span>
+  <span class="brand">iFund</span>
+</div>
+
+<!-- SIDEBAR -->
+<div id="menu" class="sidebar">
+
+  <a href="/dashboard">Dashboard</a>
+  <a href="/task">Do Math Task</a>
+  <a href="/convert-page">Convert Points</a>
+  <a href="/referral">Referral</a>
+
+  <!-- WITHDRAW DROPDOWN -->
+  <div class="menu-group">
+    <span class="menu-title" onclick="toggleSub('withdraw-sub')">
+      Withdraw ▾
+    </span>
+    <div id="withdraw-sub" class="submenu">
+      <a href="/withdraw">Request Withdrawal</a>
+      <a href="/my-withdrawals">Withdrawal History</a>
+    </div>
+  </div>
+
+  <!-- ABOUT DROPDOWN -->
+  <div class="menu-group">
+    <span class="menu-title" onclick="toggleSub('about-sub')">
+      About iFund Marketing ▾
+    </span>
+    <div id="about-sub" class="submenu">
+      <a href="/about">About iFund Marketing</a>
+      <a href="/terms">Terms & Conditions</a>
+      <a href="/privacy">Privacy Policy</a>
+    </div>
+  </div>
+
+  {% if user and user.is_admin %}
+    <hr>
+    <a href="/admin">Admin Panel</a>
+  {% endif %}
+
+  <a href="/logout" class="logout">Logout</a>
+</div>
+
+<!-- MAIN CONTENT -->
+<div class="content">
+  {% block content %}{% endblock %}
+</div>
+
+<!-- TOAST CONTAINER -->
+<div id="toast-container"></div>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% for category, message in messages %}
+    <script>
+      showToast("{{ message }}", "{{ category }}");
+    </script>
+  {% endfor %}
+{% endwith %}
+
+<script>
+function showToast(message, type="success") {
+  const container = document.getElementById("toast-container");
+
+  const toast = document.createElement("div");
+  toast.className = `toast ${type}`;
+
+  let icon = "✅";
+  if (type === "error") icon = "❌";
+  if (type === "info") icon = "ℹ️";
+
+  toast.innerHTML = `<span class="icon">${icon}</span>${message}`;
+
+  container.appendChild(toast);
+
+  setTimeout(() => {
+    toast.remove();
+  }, 3000);
+}
+</script>
+
+<footer class="app-footer">
+
+  <p>
+    <strong>iFund Marketing</strong> is currently in <strong>BETA</stro>
+    Features and rules may be adjusted to ensure sustainability.
+  </p>
+
+  <p class="footer-links">
+    <a href="/about">About iFund Marketing</a> •
+    <a href="/terms">Terms & Conditions</a> •
+    <a href="/privacy">Privacy Policy</a>
+  </p>
+
+  <p>
+    © 2026 iFund Marketing. All rights reserved.
+  </p>
+
+<script>
+/* TOGGLE SIDEBAR */
+function toggleMenu() {
+  const menu = document.getElementById("menu");
+  if (menu) {
+    menu.classList.toggle("show");
+  }
+}
+
+/* TOGGLE SUBMENUS */
+function toggleSub(id) {
+  const sub = document.getElementById(id);
+  if (sub) {
+    sub.classList.toggle("show-sub");
+  }
+}
+</script>
+
+</body>
+</html>

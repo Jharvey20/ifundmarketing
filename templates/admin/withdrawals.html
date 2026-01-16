@@ -1,0 +1,37 @@
+{% extends "admin/base_admin.html" %}
+{% block content %}
+
+<h2>💸 Withdrawal Requests</h2>
+
+<table>
+  <tr>
+    <th>User ID</th>
+    <th>Email</th>
+    <th>Amount</th>
+    <th>Method</th>
+    <th>Account</th>
+    <th>Status</th>
+    <th>Action</th>
+  </tr>
+
+  {% for w in withdrawals %}
+  <tr>
+    <td>{{ w.user_id }}</td>
+    <td>{{ w.notify_email or "-" }}</td>
+    <td>₱{{ "%.2f"|format(w.amount) }}</td>
+    <td>{{ w.method }}</td>
+    <td>{{ w.account_info }}</td>
+    <td>{{ w.status }}</td>
+    <td>
+      {% if w.status == "pending" %}
+        <a href="/admin/withdraw/{{ w.id }}/approve">✅</a>
+        <a href="/admin/withdraw/{{ w.id }}/reject">❌</a>
+      {% else %}
+        —
+      {% endif %}
+    </td>
+  </tr>
+  {% endfor %}
+</table>
+
+{% endblock %}

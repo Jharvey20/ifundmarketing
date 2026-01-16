@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Sign Up • MathBot</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='auth.css') }}">
+</head>
+<body>
+
+<div class="auth-container">
+  <div class="auth-card">
+    <h2>Create Account</h2>
+    <p class="subtitle">Activate your MathBot account</p>
+
+    {% with messages = get_flashed_messages() %}
+      {% if messages %}
+        <div class="alert">{{ messages[0] }}</div>
+      {% endif %}
+    {% endwith %}
+
+<form method="POST">
+  <div class="field-with-tooltip">
+    <input
+      type="text"
+      name="activation_code"
+      id="activationCode"
+      placeholder="Activation Code"
+      required
+      oninput="checkActivation()"
+    >
+    <span class="tooltip-icon">?</span>
+    <div class="tooltip-text">
+      This activation code is required to create an account.<br>
+      Get one from an authorized MathBot activator.
+    </div>
+  </div>
+
+  <input type="text" name="username" placeholder="Username" required>
+  <input type="text" name="full_name" placeholder="Full Name" required>
+  <input type="email" name="email" placeholder="Email" required>
+  <input type="password" name="password" placeholder="Password" required>
+
+  <button type="submit" id="signupBtn" disabled>
+    Sign Up
+  </button>
+</form>
+
+    <p class="switch">
+      Already have an account?
+      <a href="/login">Log in your account</a>
+    </p>
+  </div>
+</div>
+
+<script>
+function checkActivation() {
+  const code = document.getElementById("activationCode").value.trim();
+  const btn = document.getElementById("signupBtn");
+
+  btn.disabled = code.length === 0;
+}
+</script>
+
+</body>
+</html>

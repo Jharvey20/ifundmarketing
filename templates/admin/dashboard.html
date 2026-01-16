@@ -1,0 +1,77 @@
+{% extends "admin/base_admin.html" %}
+{% block content %}
+
+{% if funds_warning %}
+<div class="alert danger">
+  ⚠️ <strong>Warning:</strong>  
+  Admin funds are <strong>LOW</strong> compared to member earnings.  
+  Please add funds to avoid payout issues.
+</div>
+{% endif %}
+
+<h2>📊 Admin Dashboard</h2>
+
+<div class="card-grid">
+
+  <div class="card green">
+    <h4>Total Funds</h4>
+    <p>₱{{ "%.2f"|format(total_funds) }}</p>
+    <small>Admin-managed funds</small>
+  </div>
+
+  <div class="card blue">
+    <h4>Member Earnings</h4>
+    <p>₱{{ "%.2f"|format(member_earnings) }}</p>
+    <small>Total balance of all members</small>
+  </div>
+
+  <div class="card orange">
+    <h4>Total Cash Outs</h4>
+    <p>₱{{ "%.2f"|format(total_cashouts) }}</p>
+    <small>Approved withdrawals</small>
+  </div>
+
+</div>
+
+<hr>
+
+<div class="card">
+  <h3>Generate Activation Codes</h3>
+  <form method="POST" action="/admin/generate-codes">
+    <input type="number" name="count" min="1" required>
+    <button type="submit">Generate</button>
+  </form>
+
+  {% if session.generated_codes %}
+    <textarea rows="5" style="width:100%;">
+{% for c in session.generated_codes %}{{ c }}
+{% endfor %}
+    </textarea>
+  {% endif %}
+</div>
+
+<hr>
+
+<h3>🏆 Top Earners</h3>
+
+<table>
+  <tr>
+    <th>Rank</th>
+    <th>Username</th>
+    <th>Balance</th>
+    <th>Total Payouts</th>
+    <th>Referrals</th>
+  </tr>
+
+  {% for u in leaderboard %}
+  <tr>
+    <td>#{{ u.rank }}</td>
+    <td>{{ u.username }}</td>
+    <td>₱{{ "%.2f"|format(u.balance) }}</td>
+    <td>₱{{ "%.2f"|format(u.total_payouts) }}</td>
+    <td>{{ u.referrals }}</td>
+  </tr>
+  {% endfor %}
+</table>
+
+{% endblock %}

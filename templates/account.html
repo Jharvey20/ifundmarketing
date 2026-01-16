@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block content %}
+
+<h2>My Information</h2>
+
+<p><strong>User ID:</strong> {{ user.user_id }}</p>
+<p><strong>Username:</strong> {{ user.username }}</p>
+<p><strong>Email:</strong> {{ user.email }}</p>
+<p><strong>Activation Code:</strong> {{ user.activation_code }}</p>
+
+<br>
+<a href="/logout">Logout</a>
+
+{% endblock %}

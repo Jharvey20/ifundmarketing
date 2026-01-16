@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block content %}
+
+<h2>💸 Withdraw Funds</h2>
+
+<p><strong>Available Balance:</strong> ₱{{ "%.2f"|format(user.cash_balance) }}</p>
+
+<!-- WITHDRAWAL RULES -->
+<div class="card warning">
+  <p><strong>Withdrawal Rules:</strong></p>
+  <ul>
+    <li>Minimum withdrawal: <strong>₱300</strong></li>
+    <li>Processing fee: <strong>5%</strong></li>
+    <li>You will receive: <strong>₱285</strong> for ₱300</li>
+    <li>Processing time: <strong>1–2 business days</strong></li>
+    <li>Withdrawals are processed <strong>weekly in batches</strong></li>
+  </ul>
+</div>
+
+<!-- WITHDRAW FORM -->
+<form method="POST" class="card">
+
+  <label>Amount</label>
+  <input
+    type="number"
+    name="amount"
+    min="300"
+    step="1"
+    placeholder="Enter amount (min ₱300)"
+    required
+  >
+
+  <label>Withdrawal Method</label>
+  <select name="method" required>
+    <option value="GCash">GCash</option>
+    <option value="Maya">Maya</option>
+    <option value="Bank">Bank Transfer</option>
+  </select>
+
+  <label>Account Name / Number</label>
+  <input
+    type="text"
+    name="account"
+    placeholder="GCash / Bank account details"
+    required
+  
+  <label>Email for Notification</label>
+  <input
+    type="email"
+    name="notify_email"
+    value="{{ user.email }}"
+    placeholder="Enter email to receive updates"
+    required
+  >
+  <button type="submit" class="btn-primary">
+    Request Withdrawal
+  </button>
+
+</form>
+
+{% endblock %}

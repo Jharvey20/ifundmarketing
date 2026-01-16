@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="card">
+  <h3>Your Points: {{ user.points }}</h3>
+
+  {% for msg in get_flashed_messages() %}
+    <div class="flash">{{ msg }}</div>
+  {% endfor %}
+
+  {% if remaining > 0 %}
+    <p style="text-align:center;">Next task in <b><span id="time">{{ remaining }}</span>s</b></p>
+
+    <div class="progress-wrap">
+      <div id="progress-bar" class="progress-bar"></div>
+    </div>
+
+  {% else %}
+    <div class="question">{{ question }}</div>
+
+    <form method="POST">
+      <input type="number" name="answer" required autofocus>
+      <button>Submit</button>
+    </form>
+  {% endif %}
+</div>
+
+<script>
+let total = 30;
+let remaining = {{ remaining }};
+
+if (remaining > 0) {
+  const bar = document.getElementById("progress-bar");
+  const timeEl = document.getElementById("time");
+
+  const interval = setInterval(() => {
+    remaining--;
+    timeEl.textContent = remaining;
+
+    let percent = ((total - remaining) / total) * 100;
+    bar.style.width = percent + "%";
+
+    if (remaining <= 0) {
+      clearInterval(interval);
+      location.reload();
+    }
+  }, 1000);
+}
+</script>
+
+{% endblock %}

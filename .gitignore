@@ -1,0 +1,13 @@
+# databases
+*.db
+instance/
+
+# python cache
+__pycache__/
+
+# secrets
+.env
+
+# binaries
+ngrok
+*.zip

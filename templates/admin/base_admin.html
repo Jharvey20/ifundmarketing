@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Admin Panel – iFund Marketing</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="admin-body">
+
+<!-- TOP BAR -->
+<div class="admin-topbar">
+  <span class="admin-burger" onclick="toggleAdminMenu()">☰</span>
+  <strong>👑 iFund Admin</strong>
+</div>
+
+<!-- SIDEBAR -->
+<div id="adminSidebar" class="admin-sidebar">
+    <a href="/admin">📊 Dashboard</a>
+    <a href="/admin/add-funds">➕ Add Funds</a>
+    <a href="/admin/withdrawals">💸 Withdrawals</a>
+    <a href="/logout">🚪 Logout</a>
+</div>
+
+<!-- CONTENT -->
+<div class="admin-content">
+  {% block content %}{% endblock %}
+</div>
+
+<script>
+function toggleAdminMenu() {
+  document.getElementById("adminSidebar").classList.toggle("show");
+}
+</script>
+
+</body>
+</html>

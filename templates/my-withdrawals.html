@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="page-header">
+  <h2>🧾 Withdrawal History</h2>
+  <p>Track the status of your withdrawal requests</p>
+</div>
+
+<div class="card">
+  {% if withdrawals %}
+  <table class="styled-table">
+    <thead>
+      <tr>
+        <th>Date</th>
+        <th>Amount</th>
+        <th>Method</th>
+        <th>Status</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for w in withdrawals %}
+      <tr>
+        <td>{{ w.requested_at.strftime("%Y-%m-%d %H:%M") }}</td>
+        <td class="amount">₱{{ "%.2f"|format(w.amount) }}</td>
+        <td>{{ w.method }}</td>
+        <td>
+          {% if w.status == "pending" %}
+            <span class="badge pending">Pending</span>
+          {% elif w.status == "approved" %}
+            <span class="badge approved">Approved</span>
+          {% elif w.status == "paid" %}
+            <span class="badge paid">Paid</span>
+          {% else %}
+            <span class="badge rejected">Rejected</span>
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+    <p class="empty">No withdrawal records yet.</p>
+  {% endif %}
+</div>
+
+{% endblock %}

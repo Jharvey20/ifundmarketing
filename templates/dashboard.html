@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block content %}
+
+<!-- WELCOME -->
+<div class="welcome-card">
+  <h2>WELCOME BACK,</h2>
+  <h1>@{{ user.username }}</h1>
+  <p>Your current progress 👇</p>
+</div>
+
+<!-- STATS GRID -->
+<div class="card-grid">
+
+  <div class="card green">
+    <span>Cash Balance</span>
+    <h2>₱{{ "%.2f"|format(user.cash_balance) }}</h2>
+  </div>
+
+  <div class="card blue">
+    <span>Points</span>
+    <h2>{{ user.points }}</h2>
+  </div>
+
+  <div class="card orange">
+    <span>Referral Earnings</span>
+    <h2>₱{{ "%.2f"|format(user.referral_balance) }}</h2>
+  </div>
+
+  <div class="card purple">
+    <span>Total Referrals</span>
+    <h2>{{ user.referrals }}</h2>
+  </div>
+
+</div>
+
+<!-- REFERRAL LINK -->
+<div class="card link-card">
+  <span>Your Referral Link</span>
+
+  <input
+    type="text"
+    value="{{ request.host_url }}signup?ref={{ user.user_id }}"
+    readonly
+    onclick="this.select()"
+  >
+
+  <button onclick="copyLink()">Copy</button>
+
+  <small>Earn ₱50 for every successful signup.</small>
+</div>
+
+<script>
+function copyLink() {
+  const input = document.querySelector(".link-card input");
+  input.select();
+  navigator.clipboard.writeText(input.value);
+  showToast("Referral link copied!", "success");
+}
+</script>
+
+{% endblock %}
