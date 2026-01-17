@@ -4,6 +4,7 @@ import requests
 from flask import request
 from sqlalchemy import text, func
 from werkzeug.security import check_password_hash
+from flask import current_app
 
 from app import db
 from models import Task
@@ -13,6 +14,8 @@ import random
 import time
 import threading
 from models import User
+
+with current_app.app_context():
 
 PAGE_ACCESS_TOKEN = os.getenv("PAGE_ACCESS_TOKEN")
 
