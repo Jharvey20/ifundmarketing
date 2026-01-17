@@ -2,12 +2,11 @@ import os
 import requests
 
 from flask import request
-from sqlalchemy import text
+from sqlalchemy import text, func
 from werkzeug.security import check_password_hash
 
 from app import db
-from models import Task
-from sqlalchemy import func
+from app.models import Task
 
 PAGE_ACCESS_TOKEN = os.getenv("PAGE_ACCESS_TOKEN")
 
