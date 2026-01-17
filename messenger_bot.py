@@ -117,33 +117,41 @@ def send_message(psid, text):
 def handle_webhook(data):
     for entry in data.get("entry", []):
         for event in entry.get("messaging", []):
+
             psid = event["sender"]["id"]
 
-            if "message" not in event:
-                continue
+            # ===== BUTTON CLICK =====
+            if "postback" in event:
+                payload = event["postback"]["payload"]
 
-            if "text" not in event["message"]:
-                continue
+                if payload == "BALANCE":
+                    send_message(psid, "💰 Balance feature working.")
 
-            text_msg = event["message"]["text"].strip().lower()
+                elif payload == "TASKS":
+                    send_message(psid, "🧠 Task system coming next.")
 
-            # ---- START FLOW ----
-            if text_msg in ["hi", "hello", "start"]:
-                send_message(
-                    psid,
-                    "👋 Hi! Welcome to iFund Marketing Messenger Bot!\n\n"
-                    "Type LOGIN to connect your account."
-                )
+                elif payload == "INFO":
+                    send_message(psid, "👤 Account info linked.")
 
-            elif text_msg == "login":
-                send_message(psid, "Please enter your USERNAME:")
+                return  # IMPORTANT: stop here
 
-                # save state (simple version for Phase 1.1)
-                save_state(psid, "awaiting_username")
+            # ===== TEXT MESSAGE =====
+            if "message" in event and "text" in event["message"]:
+                text_msg = event["message"]["text"].strip().lower()
 
-            else:
-                process_state(psid, text_msg)
+                if text_msg in ["hi", "hello", "start"]:
+                    send_message(
+                        psid,
+                        "👋 Hi! Welcome to iFund Marketing Messenger Bot!\n\n"
+                        "Type LOGIN to connect your account."
+                    )
 
+                elif text_msg == "login":
+                    send_message(psid, "Please enter your USERNAME:")
+                    save_state(psid, "awaiting_username")
+
+                else:
+                    process_state(psid, text_msg)
 
 # =====================
 # STATE HANDLING
