@@ -9,6 +9,7 @@ from messenger_bot import verify_user, send_messenger_dashboard
 from messenger_bot import handle_webhook
 from functools import wraps
 from flask import session, redirect, url_for
+from sqlalchemy import text
 
 # ========================
 # CREATE FLASK APP
@@ -641,21 +642,21 @@ def webhook():
     handle_webhook(data)
     return "ok", 200
 
-@app.route("/activate-messenger", methods=["GET", "POST"])
+@app.route("/activate-messenger", methods=["POST"])
 def activate_messenger():
-    if request.method == "GET":
-        return redirect(url_for("messenger_connect"))
-
     messenger_id = request.form.get("messenger_id", "").strip()
-    user_id = session["user_id"]
+    user_id = session.get("user")
+
+    if not user_id:
+        return redirect(url_for("login"))
 
     result = db.session.execute(
         text("""
             SELECT id
             FROM users
             WHERE id = :uid
-              AND messenger_id = :mid
-              AND messenger_active = TRUE
+            AND messenger_id = :mid
+            AND messenger_active = TRUE
         """),
         {"uid": user_id, "mid": messenger_id}
     ).fetchone()
@@ -665,7 +666,11 @@ def activate_messenger():
         return redirect(url_for("messenger_connect"))
 
     psid = messenger_id.replace("IFD-", "")
-    send_messenger_dashboard(psid)
+
+    try:
+        send_messenger_dashboard(psid)
+    except Exception as e:
+        print("Messenger error:", e)
 
     flash("✅ Messenger Activated! Check Messenger now.", "success")
     return redirect(url_for("dashboard"))
