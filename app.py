@@ -7,6 +7,8 @@ import os
 import requests
 from messenger_bot import verify_user, send_messenger_dashboard
 from messenger_bot import handle_webhook
+from functools import wraps
+from flask import session, redirect, url_for
 
 # ========================
 # CREATE FLASK APP
@@ -23,6 +25,14 @@ def admin_required():
         return False
     user = User.query.filter_by(user_id=session["user"]).first()
     return user and user.is_admin
+
+def login_required(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        if "user_id" not in session:
+            return redirect(url_for("login"))
+        return f(*args, **kwargs)
+    return decorated
 
 # ======================
 # CONFIGURATION
