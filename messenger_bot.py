@@ -340,7 +340,6 @@ def handle_webhook(data):
                     send_message(psid, "Please enter your USERNAME:")
                     save_state(psid, "awaiting_username")
                     return
-
                 # ALL OTHER STATES
                 process_state(psid, text_msg)
                 return
@@ -353,8 +352,7 @@ def handle_webhook(data):
             INSERT INTO messenger_states (psid, state)
             VALUES (:psid, :state)
             ON CONFLICT (psid)
-            DO UPDATE SET state = :state
-        """),
+            DO UPDATE SET state = :state"""),
         {"psid": psid, "state": state}
     )
     db.session.commit()
