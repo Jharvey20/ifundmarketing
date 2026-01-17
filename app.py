@@ -26,13 +26,16 @@ def admin_required():
     user = User.query.filter_by(user_id=session["user"]).first()
     return user and user.is_admin
 
+from functools import wraps
+from flask import session, redirect, url_for
+
 def login_required(f):
     @wraps(f)
-    def decorated(*args, **kwargs):
+    def decorated_function(*args, **kwargs):
         if "user_id" not in session:
             return redirect(url_for("login"))
         return f(*args, **kwargs)
-    return decorated
+    return decorated_function
 
 # ======================
 # CONFIGURATION
