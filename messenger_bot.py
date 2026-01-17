@@ -1,8 +1,11 @@
 import os
 import requests
-from flask import request, jsonify
+
+from flask import request
 from sqlalchemy import text
-from app import db  # reuse db from app.py
+from werkzeug.security import check_password_hash
+
+from app import db
 
 PAGE_ACCESS_TOKEN = os.getenv("PAGE_ACCESS_TOKEN")
 
