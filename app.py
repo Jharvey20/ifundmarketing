@@ -22,10 +22,10 @@ app.secret_key = os.environ["SECRET_KEY"]
 def admin_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
-        if "user_id" not in session:
+        if "user" not in session:
             return redirect(url_for("login"))
 
-        user = User.query.get(session["user_id"])
+        user = User.query.get(session["user"])
         if not user or not user.is_admin:
             return redirect(url_for("dashboard"))
 
@@ -35,7 +35,7 @@ def admin_required(f):
 def login_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        if "user_id" not in session:
+        if "user" not in session:
             return redirect(url_for("login"))
         return f(*args, **kwargs)
     return decorated_function
