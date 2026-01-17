@@ -13,6 +13,18 @@ PAGE_ACCESS_TOKEN = os.getenv("PAGE_ACCESS_TOKEN")
 # SEND MESSAGE FUNCTION
 # =====================
 
+def get_user_id_by_psid(psid):
+    result = db.session.execute(
+        text("""
+            SELECT id FROM users
+            WHERE messenger_id = :mid
+              AND messenger_active = TRUE
+        """),
+        {"mid": f"IFD-{psid}"}
+    ).fetchone()
+
+    return result[0] if result else None
+
 def verify_user(psid, username, password):
     result = db.session.execute(
         text("""
