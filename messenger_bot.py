@@ -9,8 +9,34 @@ from app import db
 from models import Task
 from sqlalchemy import func
 from app import db
+import random
+import time
+import threading
 
 PAGE_ACCESS_TOKEN = os.getenv("PAGE_ACCESS_TOKEN")
+
+def send_delayed(psid, message, delay):
+    time.sleep(delay)
+    send_message(psid, message)
+
+def send_quick_replies(psid, text, replies):
+    payload = {
+        "recipient": {"id": psid},
+        "message": {
+            "text": text,
+            "quick_replies": [
+                {
+                    "content_type": "text",
+                    "title": r["title"],
+                    "payload": r["payload"]
+                } for r in replies
+            ]
+        }
+    }
+    requests.post(
+        f"https://graph.facebook.com/v18.0/me/messages?access_token={PAGE_ACCESS_TOKEN}",
+        json=payload
+    )
 
 # =====================
 # SEND MESSAGE FUNCTION
@@ -156,27 +182,101 @@ def update_task_log(user_id):
     )
     db.session.commit()
 
-# =====================
-# HANDLE INCOMING EVENTS
-# =====================
+def generate_math_task():
+    op = random.choice(["+", "-", "*", "/"])
+
+    if op in ["+", "-"]:
+        a = random.randint(10000, 999999)
+        b = random.randint(10000, 999999)
+        answer = a + b if op == "+" else a - b
+
+    elif op == "*":
+        a = random.randint(100, 9999)
+        b = random.randint(10, 999)
+        answer = a * b
+
+    else:  # division – whole number only
+        answer = random.randint(10, 9999)
+        b = random.randint(2, 99)
+        a = answer * b
+
+    question = f"🧮 MATH TASK\n\nSolve:\n{a} {op} {b}"
+    return question, str(answer)
+
+COLOR_POOL = [
+    "red", "blue", "green", "yellow", "orange",
+    "purple", "pink", "brown", "black", "white",
+    "gray", "cyan", "magenta", "lime", "teal"
+]
+
+def generate_color_memory_task():
+    colors = [random.choice(COLOR_POOL) for _ in range(25)]
+    index = random.randint(1, 25)  # 1-based for user
+    correct_answer = colors[index - 1]
+
+    color_text = ", ".join(colors)
+
+    question = (
+        f"🎨 COLOR MEMORY TASK\n\n"
+        f"{color_text}\n\n"
+        f"❓ What is the {index}th color?"
+    )
+
+    return question, correct_answer
+
+def run_task_flow(psid, user_id):
+    user = User.query.get(user_id)
+    username = user.username
+
+    # STEP 1
+    send_message(psid, "⏳ Please wait a moment...")
+    time.sleep(10)
+
+    # STEP 2
+    send_message(psid, "⚙️ Generating task...")
+    time.sleep(10)
+
+    # STEP 3 – GENERATE TASK
+    question, correct_answer = generate_color_memory_task()
+    save_state(psid, f"task_answer:{correct_answer}")
+
+    send_message(
+        psid,
+        f"🧠 Task generated!\n\n"
+        f"Here's your question, {username}:\n\n"
+        f"{question}"
+    )
+
+    time.sleep(5)
+
+#==
+#Incoming Messages
+#==
+
 def handle_webhook(data):
     for entry in data.get("entry", []):
         for event in entry.get("messaging", []):
             psid = event["sender"]["id"]
 
             # =========================
-            # BUTTON / POSTBACK HANDLER
+            # POSTBACK HANDLER
             # =========================
             if "postback" in event:
                 payload = event["postback"]["payload"]
 
-                # 👉 BALANCE BUTTON
+                # =================
+                # BALANCE BUTTON
+                # =================
                 if payload == "BALANCE":
                     send_message(psid, "💰 Balance feature working.")
+                    return
 
-                # 👉 TASKS BUTTON
+                # =================
+                # TASKS BUTTON
+                # =================
                 elif payload == "TASKS":
                     user_id = get_user_id_by_psid(psid)
+
                     if not user_id:
                         send_message(psid, "❌ Please LOGIN first.")
                         return
@@ -185,15 +285,31 @@ def handle_webhook(data):
                         send_message(psid, "⏳ Please wait 10–15 seconds before next task.")
                         return
 
-                    task = db.session.query(Task).order_by(func.random()).first()
-                    if not task:
-                        send_message(psid, "⚠️ No tasks available right now.")
-                        return
+                    # RUN AS BACKGROUND THREAD
+                    threading.Thread(
+                        target=run_task_flow,
+                        args=(psid, user_id)
+                    ).start()
 
-                    save_state(psid, f"task:{task.id}")
-                    send_message(psid, f"🧠 Task:\n{task.question}")
+                    return
 
-                # 👉 INFO BUTTON
+                    # 🔀 RANDOM TASK TYPE
+                    task_type = random.choice(["color", "math"])
+
+                    if task_type == "color":
+                        question, correct_answer = generate_color_memory_task()
+                    else:
+                        question, correct_answer = generate_math_task()
+
+                    # save expected answer
+                    save_state(psid, f"task_answer:{correct_answer}")
+
+                    send_message(psid, question)
+                    return
+
+                # =================
+                # INFO BUTTON
+                # =================
                 elif payload == "INFO":
                     send_message(
                         psid,
@@ -202,36 +318,36 @@ def handle_webhook(data):
                         "you can re-activate using your IFD\n"
                         "from the website."
                     )
-
-                return  # ⛔ IMPORTANT: stop here after postback
+                    return
 
             # =========================
             # TEXT MESSAGE HANDLER
             # =========================
             if "message" in event and "text" in event["message"]:
-                text_msg = event["message"]["text"].strip().lower()
+                text_msg = event["message"]["text"].strip()
 
-                # START / HI
-                if text_msg in ["hi", "hello", "start"]:
+                # GREETING
+                if text_msg.lower() in ["hi", "hello", "start"]:
                     send_message(
                         psid,
                         "👋 Hi! Welcome to iFund Marketing Messenger Bot!\n\n"
-                        "Type LOGIN to connect your account."
+                        "Tap TASKS to earn or type LOGIN to connect your account."
                     )
+                    return
 
                 # LOGIN FLOW
-                elif text_msg == "login":
+                if text_msg.lower() == "login":
                     send_message(psid, "Please enter your USERNAME:")
                     save_state(psid, "awaiting_username")
+                    return
 
-                # ALL OTHER STATES (TASK ANSWER, PASSWORD, ETC)
-                else:
-                    process_state(psid, text_msg)
-
+                # ALL OTHER STATES
+                process_state(psid, text_msg)
+                return
 # =====================
-# STATE HANDLING
-# =====================
-def save_state(psid, state):
+#STATEHANDLING
+#=====================
+	def save_state(psid, state):
     db.session.execute(
         text("""
             INSERT INTO messenger_states (psid, state)
@@ -255,18 +371,78 @@ def get_state(psid):
 def process_state(psid, message):
     state = get_state(psid)
 
+    # =========================
+    # TASK ANSWER HANDLER
+    # =========================
+    if state and state.startswith("task_answer:"):
+        correct_answer = state.split(":", 1)[1]
+
+        user_id = get_user_id_by_psid(psid)
+        if not user_id:
+            send_message(psid, "❌ Session expired. Please LOGIN again.")
+            save_state(psid, None)
+            return
+
+        # Simulated processing flow
+        send_message(psid, "🔍 Checking answer...")
+        time.sleep(10)
+
+        send_message(psid, "📤 Submitting...")
+        time.sleep(3)
+
+        send_message(psid, "✅ Submitted")
+        time.sleep(2)
+
+        # CHECK ANSWER (case-insensitive)
+        if message.strip().lower() == correct_answer.lower():
+            reward = get_random_messenger_reward()  # ₱0.0125–₱0.030
+            user = User.query.get(user_id)
+
+            user.cash_balance += reward
+            update_task_log(user_id, "messenger")
+            db.session.commit()
+
+            send_message(
+                psid,
+                f"🎉 Correct!\n\n"
+                f"💰 You received ₱{reward:.4f}\n"
+                f"📊 Total Balance: ₱{user.cash_balance:.4f}"
+            )
+        else:
+            send_message(psid, "❌ Wrong answer.")
+
+        # Quick Replies (ManyChat-style)
+        send_quick_replies(
+            psid,
+            "What would you like to do next?",
+            [
+                {"title": "Next", "payload": "TASKS"},
+                {"title": "Dashboard", "payload": "DASHBOARD"},
+            ],
+        )
+
+        save_state(psid, None)
+        return
+
+    # =========================
+    # LOGIN FLOW
+    # =========================
     if state == "awaiting_username":
         save_state(psid, f"awaiting_password|{message}")
         send_message(psid, "Please enter your PASSWORD:")
+        return
 
     elif state and state.startswith("awaiting_password"):
-        username = state.split("|")[1]
+        username = state.split("|", 1)[1]
         password = message
         verify_user(psid, username, password)
+        save_state(psid, None)
+        return
 
-    else:
-        send_message(psid, "❓ Type LOGIN to start.")
-
+    # =========================
+    # FALLBACK
+    # =========================
+    send_message(psid, "❓ Type LOGIN to start.")
 
 # =====================
 # VERIFY USER
