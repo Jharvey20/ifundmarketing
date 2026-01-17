@@ -16,18 +16,21 @@ from flask import session, redirect, url_for
 app = Flask(__name__)
 
 # SECRET KEY (REQUIRED FOR SESSION)
-app.secret_key = os.environ.get(
-    "SECRET_KEY",
-    "e1864bdd86d874f042c737bddb0edd1b06a838be3a75f1942efb473294ded90d"
+app.secret_key = os.environ["SECRET_KEY"]
 )
-def admin_required():
-    if "user" not in session:
-        return False
-    user = User.query.filter_by(user_id=session["user"]).first()
-    return user and user.is_admin
 
-from functools import wraps
-from flask import session, redirect, url_for
+def admin_required(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        if "user_id" not in session:
+            return redirect(url_for("login"))
+
+        user = User.query.get(session["user_id"])
+        if not user or not user.is_admin:
+            return redirect(url_for("dashboard"))
+
+        return f(*args, **kwargs)
+    return decorated
 
 def login_required(f):
     @wraps(f)
