@@ -636,9 +636,12 @@ def webhook():
     handle_webhook(data)
     return "ok", 200
 
-@app.route("/activate-messenger", methods=["POST"])
+@app.route("/activate-messenger", methods=["GET", "POST"])
 @login_required
 def activate_messenger():
+    if request.method == "GET":
+        return redirect(url_for("messenger_connect"))
+
     messenger_id = request.form.get("messenger_id", "").strip()
     user_id = session["user_id"]
 
@@ -657,10 +660,7 @@ def activate_messenger():
         flash("❌ Invalid or unverified Messenger ID", "error")
         return redirect(url_for("messenger_connect"))
 
-    # Extract PSID
     psid = messenger_id.replace("IFD-", "")
-
-    # Send confirmation + dashboard
     send_messenger_dashboard(psid)
 
     flash("✅ Messenger Activated! Check Messenger now.", "success")
