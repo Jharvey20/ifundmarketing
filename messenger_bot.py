@@ -6,7 +6,9 @@ from sqlalchemy import text, func
 from werkzeug.security import check_password_hash
 
 from app import db
-from app.models import Task
+from models import Task
+from sqlalchemy import func
+from app import db
 
 PAGE_ACCESS_TOKEN = os.getenv("PAGE_ACCESS_TOKEN")
 
