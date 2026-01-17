@@ -122,6 +122,36 @@ def send_message(psid, text):
 
     requests.post(url, params=params, headers=headers, json=payload)
 
+def can_do_task(user_id):
+    """
+    10–15 seconds cooldown per user (Messenger)
+    """
+    result = db.session.execute(
+        text("""
+            SELECT last_task_at
+            FROM messenger_task_logs
+            WHERE user_id = :uid
+        """),
+        {"uid": user_id}
+    ).fetchone()
+
+    if not result or not result[0]:
+        return True
+
+    last_time = result[0]
+    return datetime.utcnow() - last_time >= timedelta(seconds=10)
+
+def update_task_log(user_id):
+    db.session.execute(
+        text("""
+            INSERT INTO messenger_task_logs (user_id, last_task_at)
+            VALUES (:uid, NOW())
+            ON CONFLICT (user_id)
+            DO UPDATE SET last_task_at = NOW()
+        """),
+        {"uid": user_id}
+    )
+    db.session.commit()
 
 # =====================
 # HANDLE INCOMING EVENTS
