@@ -17,7 +17,6 @@ app = Flask(__name__)
 
 # SECRET KEY (REQUIRED FOR SESSION)
 app.secret_key = os.environ["SECRET_KEY"]
-)
 
 def admin_required(f):
     @wraps(f)
