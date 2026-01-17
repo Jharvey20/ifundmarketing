@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block content %}
+
+<h2>💬 Activate Messenger</h2>
+
+<p>
+Connect your Messenger account to start earning via bot.
+</p>
+
+<div class="card">
+  <form method="POST" action="{{ url_for('activate_messenger') }}">
+    
+    <label>Messenger Activation ID</label>
+    <input
+      type="text"
+      name="messenger_id"
+      placeholder="IFD-1234567890"
+      required
+    >
+
+    <button type="submit">Activate</button>
+  </form>
+</div>
+
+{% endblock %}

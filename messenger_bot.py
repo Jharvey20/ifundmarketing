@@ -12,6 +12,92 @@ PAGE_ACCESS_TOKEN = os.getenv("PAGE_ACCESS_TOKEN")
 # =====================
 # SEND MESSAGE FUNCTION
 # =====================
+
+def verify_user(psid, username, password):
+    result = db.session.execute(
+        text("""
+            SELECT id, password_hash
+            FROM users
+            WHERE username = :username
+            AND messenger_active = FALSE
+        """),
+        {"username": username.strip()}
+    ).fetchone()
+
+    if not result:
+        send_message(psid, "❌ Account not found or already linked.")
+        return
+
+    user_id, password_hash = result
+
+    if not check_password_hash(password_hash, password.strip()):
+        send_message(psid, "❌ Invalid password.")
+        return
+
+    messenger_code = f"IFD-{psid}"
+
+    db.session.execute(
+        text("""
+            UPDATE users
+            SET messenger_id = :mid,
+                messenger_active = TRUE
+            WHERE id = :uid
+        """),
+        {"mid": messenger_code, "uid": user_id}
+    )
+    db.session.commit()
+
+    send_message(
+        psid,
+        "✅ Account verified!\n\n"
+        f"Your Messenger Activation ID:\n{messenger_code}\n\n"
+        "Paste this on the website under:\n'Earn with Messenger'"
+    )
+
+
+def send_messenger_dashboard(psid):
+    url = "https://graph.facebook.com/v18.0/me/messages"
+    payload = {
+        "recipient": {"id": psid},
+        "message": {
+            "attachment": {
+                "type": "template",
+                "payload": {
+                    "template_type": "generic",
+                    "elements": [
+                        {
+                            "title": "iFund Marketing Dashboard",
+                            "subtitle": "Choose an option",
+                            "buttons": [
+                                {
+                                    "type": "postback",
+                                    "title": "💰 Balance",
+                                    "payload": "BALANCE"
+                                },
+                                {
+                                    "type": "postback",
+                                    "title": "🧮 Do Tasks",
+                                    "payload": "TASKS"
+                                },
+                                {
+                                    "type": "postback",
+                                    "title": "👤 My Info",
+                                    "payload": "INFO"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            }
+        }
+    }
+
+    requests.post(
+        url,
+        params={"access_token": PAGE_ACCESS_TOKEN},
+        json=payload
+    )
+
 def send_message(psid, text):
     url = "https://graph.facebook.com/v18.0/me/messages"
     payload = {

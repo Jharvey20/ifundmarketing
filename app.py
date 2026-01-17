@@ -5,6 +5,7 @@ import random
 import time
 import os
 import requests
+from messenger_bot import verify_user, send_messenger_dashboard
 from messenger_bot import handle_webhook
 
 # ========================
@@ -624,6 +625,41 @@ def webhook():
     data = request.get_json()
     handle_webhook(data)
     return "ok", 200
+
+@app.route("/activate-messenger", methods=["POST"])
+@login_required
+def activate_messenger():
+    messenger_id = request.form.get("messenger_id", "").strip()
+    user_id = session["user_id"]
+
+    result = db.session.execute(
+        text("""
+            SELECT id
+            FROM users
+            WHERE id = :uid
+              AND messenger_id = :mid
+              AND messenger_active = TRUE
+        """),
+        {"uid": user_id, "mid": messenger_id}
+    ).fetchone()
+
+    if not result:
+        flash("❌ Invalid or unverified Messenger ID", "error")
+        return redirect(url_for("messenger_connect"))
+
+    # Extract PSID
+    psid = messenger_id.replace("IFD-", "")
+
+    # Send confirmation + dashboard
+    send_messenger_dashboard(psid)
+
+    flash("✅ Messenger Activated! Check Messenger now.", "success")
+    return redirect(url_for("dashboard"))
+
+@app.route("/messenger")
+@login_required
+def messenger_connect():
+    return render_template("messenger/connect.html")
 
 # ======================
 # RUN SERVER
