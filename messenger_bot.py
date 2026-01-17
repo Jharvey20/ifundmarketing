@@ -12,6 +12,7 @@ from app import db
 import random
 import time
 import threading
+from models import User
 
 PAGE_ACCESS_TOKEN = os.getenv("PAGE_ACCESS_TOKEN")
 
@@ -225,29 +226,29 @@ def generate_color_memory_task():
     return question, correct_answer
 
 def run_task_flow(psid, user_id):
-    user = User.query.get(user_id)
-    username = user.username
+    with app.app_context():  # 🔥 IMPORTANT
+        user = User.query.get(user_id)
+        if not user:
+            send_message(psid, "❌ User not found.")
+            return
 
-    # STEP 1
-    send_message(psid, "⏳ Please wait a moment...")
-    time.sleep(10)
+        username = user.username
 
-    # STEP 2
-    send_message(psid, "⚙️ Generating task...")
-    time.sleep(10)
+        send_message(psid, "⏳ Please wait a moment...")
+        time.sleep(10)
 
-    # STEP 3 – GENERATE TASK
-    question, correct_answer = generate_color_memory_task()
-    save_state(psid, f"task_answer:{correct_answer}")
+        send_message(psid, "⚙️ Generating task...")
+        time.sleep(10)
 
-    send_message(
-        psid,
-        f"🧠 Task generated!\n\n"
-        f"Here's your question, {username}:\n\n"
-        f"{question}"
-    )
+        question, correct_answer = generate_color_memory_task()
+        save_state(psid, f"task_answer:{correct_answer}")
 
-    time.sleep(5)
+        send_message(
+            psid,
+            f"🧠 Task generated!\n\n"
+            f"Here's your question, {username}:\n\n"
+            f"{question}"
+        )
 
 #==
 #Incoming Messages
