@@ -40,6 +40,22 @@ def login_required(f):
         return f(*args, **kwargs)
     return decorated
 
+def can_do_task(user_id):
+    log = TaskLog.query.filter_by(user_id=user_id).first()
+    if not log:
+        return True
+
+    return (datetime.utcnow() - log.last_task_at).seconds >= 15
+
+def update_task_log(user_id, platform):
+    log = TaskLog.query.filter_by(user_id=user_id).first()
+    if not log:
+        log = TaskLog(user_id=user_id, platform=platform)
+        db.session.add(log)
+
+    log.last_task_at = datetime.utcnow()
+    db.session.commit()
+
 # ======================
 # CONFIGURATION
 # ======================

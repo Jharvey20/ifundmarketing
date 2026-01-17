@@ -117,28 +117,56 @@ def send_message(psid, text):
 def handle_webhook(data):
     for entry in data.get("entry", []):
         for event in entry.get("messaging", []):
-
             psid = event["sender"]["id"]
 
-            # ===== BUTTON CLICK =====
+            # =========================
+            # BUTTON / POSTBACK HANDLER
+            # =========================
             if "postback" in event:
                 payload = event["postback"]["payload"]
 
+                # 👉 BALANCE BUTTON
                 if payload == "BALANCE":
                     send_message(psid, "💰 Balance feature working.")
 
+                # 👉 TASKS BUTTON
                 elif payload == "TASKS":
-                    send_message(psid, "🧠 Task system coming next.")
+                    user_id = get_user_id_by_psid(psid)
+                    if not user_id:
+                        send_message(psid, "❌ Please LOGIN first.")
+                        return
 
+                    if not can_do_task(user_id):
+                        send_message(psid, "⏳ Please wait 10–15 seconds before next task.")
+                        return
+
+                    task = db.session.query(Task).order_by(func.random()).first()
+                    if not task:
+                        send_message(psid, "⚠️ No tasks available right now.")
+                        return
+
+                    save_state(psid, f"task:{task.id}")
+                    send_message(psid, f"🧠 Task:\n{task.question}")
+
+                # 👉 INFO BUTTON
                 elif payload == "INFO":
-                    send_message(psid, "👤 Account info linked.")
+                    send_message(
+                        psid,
+                        "ℹ️ Account Info\n\n"
+                        "If Messenger becomes inactive,\n"
+                        "you can re-activate using your IFD\n"
+                        "from the website."
+                    )
 
-                return  # IMPORTANT: stop here
+                return  # ⛔ IMPORTANT: stop here after postback
 
-            # ===== TEXT MESSAGE =====
+            # =========================
+            # TEXT MESSAGE HANDLER
+            # =========================
             if "message" in event and "text" in event["message"]:
                 text_msg = event["message"]["text"].strip().lower()
 
+                # START / HI
                 if text_msg in ["hi", "hello", "start"]:
                     send_message(
                         psid,
@@ -146,10 +174,12 @@ def handle_webhook(data):
                         "Type LOGIN to connect your account."
                     )
 
+                # LOGIN FLOW
                 elif text_msg == "login":
                     send_message(psid, "Please enter your USERNAME:")
                     save_state(psid, "awaiting_username")
 
+                # ALL OTHER STATES (TASK ANSWER, PASSWORD, ETC)
                 else:
                     process_state(psid, text_msg)
 
