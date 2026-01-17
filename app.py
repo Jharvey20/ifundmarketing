@@ -643,7 +643,6 @@ def webhook():
     return "ok", 200
 
 @app.route("/activate-messenger", methods=["GET", "POST"])
-@login_required
 def activate_messenger():
     if request.method == "GET":
         return redirect(url_for("messenger_connect"))
@@ -673,7 +672,6 @@ def activate_messenger():
     return redirect(url_for("dashboard"))
 
 @app.route("/messenger")
-@login_required
 def messenger_connect():
     return render_template("messenger/connect.html")
 
