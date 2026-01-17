@@ -345,11 +345,11 @@ def handle_webhook(data):
                 return
 # =====================
 #STATEHANDLING
-#=====================
-    def save_state(psid, state):
+#====================
+def save_state(psid, state):
     db.session.execute(
-        text("""
-            INSERT INTO messenger_states (psid, state)
+        text(
+            """INSERT INTO messenger_states (psid, state)
             VALUES (:psid, :state)
             ON CONFLICT (psid)
             DO UPDATE SET state = :state"""),
