@@ -15,8 +15,6 @@ import time
 import threading
 from models import User
 
-with current_app.app_context():
-
 PAGE_ACCESS_TOKEN = os.getenv("PAGE_ACCESS_TOKEN")
 
 def send_delayed(psid, message, delay):
