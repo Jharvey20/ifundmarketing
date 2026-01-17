@@ -136,8 +136,22 @@ def admin_dashboard():
     # Total Cashouts = sum of approved payouts
     total_cashouts = sum(u["total_payouts"] for u in leaderboard)
 
-    total_funds = db.session.query(
+    # Total Funds = MANUAL (ikaw maglalagay)
+    total_funds = 0  # 👈 palitan mo anytime
+
+    # ===== FUNDS COMPUTATION (ADD THIS) =====
+    total_add = db.session.query(
         func.coalesce(func.sum(AdminFund.amount), 0)
+    ).filter(AdminFund.type == "add").scalar()
+    
+    total_subtract = db.session.query(
+        func.coalesce(func.sum(AdminFund.amount), 0)
+    ).filter(AdminFund.type == "subtract").scalar()
+
+    total_funds = total_add - total_subtract
+    
+    member_earnings = db.session.query(
+        func.coalesce(func.sum(User.cash_balance), 0)
     ).scalar()
 
     # ===== WARNING CHECK =====
@@ -332,7 +346,7 @@ def dashboard():
     if "user" not in session:
         return redirect("/signup")
 
-    user = User.query.get(session["user"])
+    user = User.query.filter_by(user_id=session["user"]).first()
     return render_template("dashboard.html", user=user)
 
 @app.route("/referral")
@@ -340,7 +354,7 @@ def referral():
     if "user" not in session:
         return redirect("/login")
 
-    user = User.query.get(session["user"])
+    user = User.query.filter_by(user_id=session["user"]).first()
     return render_template("referral.html", user=user)
 
 
@@ -349,7 +363,7 @@ def account():
     if "user" not in session:
         return redirect("/login")
 
-    user = User.query.get(session["user"])
+    user = User.query.filter_by(user_id=session["user"]).first()
     return render_template("account.html", user=user)
 
 def generate_hard_task():
@@ -431,7 +445,7 @@ def task():
     if "user" not in session:
         return redirect("/login")
 
-    user = User.query.get(session["user"])
+    user = User.query.filter_by(user_id=session["user"]).first()
 
     COOLDOWN = 30
     now = int(time.time())
@@ -488,7 +502,7 @@ def withdraw():
     if "user" not in session:
         return redirect("/login")
 
-    user = User.query.get(session["user"])
+    user = User.query.filter_by(user_id=session["user"]).first()
 
     if request.method == "POST":
         amount = float(request.form["amount"])
@@ -526,7 +540,7 @@ def my_withdrawals():
     if "user" not in session:
         return redirect("/login")
 
-    user = User.query.get(session["user"])
+    user = User.query.filter_by(user_id=session["user"]).first()
 
     withdrawals = Withdrawal.query.filter_by(
         user_id=user.user_id
@@ -543,7 +557,7 @@ def convert_points():
     if "user" not in session:
         return redirect("/login")
 
-    user = User.query.get(session["user"])
+    user = User.query.filter_by(user_id=session["user"]).first()
 
     # CHECK MINIMUM POINTS
     if user.points < 200:
@@ -567,7 +581,7 @@ def convert_page():
     if "user" not in session:
         return redirect("/login")
 
-    user = User.query.get(session["user"])
+    user = User.query.filter_by(user_id=session["user"]).first()
     return render_template("convert.html", user=user)
 
 @app.route("/about")
