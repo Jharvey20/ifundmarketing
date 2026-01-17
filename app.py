@@ -77,10 +77,9 @@ def send_message(psid, text):
 from sqlalchemy import func
 
 @app.route("/admin")
+@admin_required
 def admin_dashboard():
-    if not admin_required():
-        return redirect("/dashboard")
-
+   
     # ==========================
     # GET ALL USERS
     # ==========================
@@ -168,10 +167,8 @@ def admin_dashboard():
     )
 
 @app.route("/admin/withdrawals")
+@admin_required
 def admin_withdrawals():
-    if not admin_required():
-        return redirect("/dashboard")
-
     withdrawals = Withdrawal.query.order_by(
         Withdrawal.requested_at.desc()
     ).all()
@@ -181,11 +178,9 @@ def admin_withdrawals():
         withdrawals=withdrawals
     )
 
-
 @app.route("/admin/withdraw/<int:w_id>/<action>")
+@admin_required
 def process_withdraw(w_id, action):
-    if not admin_required():
-        return redirect("/dashboard")
 
     w = db.session.get(Withdrawal, w_id)
     if not w or w.status != "pending":
@@ -215,10 +210,9 @@ def process_withdraw(w_id, action):
 
 
 @app.route("/admin/generate-codes", methods=["POST"])
+@admin_required
 def generate_codes():
-    if not admin_required():
-        return redirect("/dashboard")
-
+    
     count = int(request.form["count"])
     codes = []
 
@@ -233,10 +227,9 @@ def generate_codes():
     return redirect("/admin")
 
 @app.route("/admin/add-funds", methods=["GET", "POST"])
+@admin_required
 def add_funds():
-    if not admin_required():
-        return redirect("/dashboard")
-
+    
     if request.method == "POST":
         amount = float(request.form["amount"])
         note = request.form.get("note", "Manual fund update")
