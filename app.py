@@ -34,11 +34,11 @@ def admin_required(f):
 
 def login_required(f):
     @wraps(f)
-    def decorated_function(*args, **kwargs):
+    def decorated(*args, **kwargs):
         if "user" not in session:
             return redirect(url_for("login"))
         return f(*args, **kwargs)
-    return decorated_function
+    return decorated
 
 # ======================
 # CONFIGURATION
@@ -79,7 +79,8 @@ from sqlalchemy import func
 @app.route("/admin")
 @admin_required
 def admin_dashboard():
-   
+    return render_template("admin/dashboard.html")
+
     # ==========================
     # GET ALL USERS
     # ==========================
