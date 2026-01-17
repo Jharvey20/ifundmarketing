@@ -50,12 +50,16 @@ class AdminFund(db.Model):
     created_at = db.Column(db.DateTime, default=db.func.now())
 
 class Task(db.Model):
-    __tablename__ = "tasks"
-
     id = db.Column(db.Integer, primary_key=True)
-    question = db.Column(db.String(255), nullable=False)
+
+    task_type = db.Column(db.String(20))  
+    # "color" or "math"
+
+    question = db.Column(db.Text, nullable=False)
     answer = db.Column(db.String(50), nullable=False)
-    reward = db.Column(db.Float, default=0.02)  # messenger/web shared
+
+    reward = db.Column(db.Float, default=0.02)
+    active = db.Column(db.Boolean, default=True)
 
 class TaskLog(db.Model):
     __tablename__ = "task_logs"
