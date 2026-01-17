@@ -10,11 +10,14 @@ from messenger_bot import handle_webhook
 from functools import wraps
 from flask import session, redirect, url_for
 from sqlalchemy import text
+from flask import Flask
+from models import db
 
-# ========================
+#==========
 # CREATE FLASK APP
 # ========================
 app = Flask(__name__)
+db.init_app(app)
 
 # SECRET KEY (REQUIRED FOR SESSION)
 app.secret_key = os.environ["SECRET_KEY"]

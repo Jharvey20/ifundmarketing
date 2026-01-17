@@ -14,6 +14,7 @@ import random
 import time
 import threading
 from models import User
+from app import app
 
 PAGE_ACCESS_TOKEN = os.getenv("PAGE_ACCESS_TOKEN")
 
@@ -227,8 +228,11 @@ def generate_color_memory_task():
     return question, correct_answer
 
 def run_task_flow(psid, user_id):
-    with app.app_context():  # 🔥 IMPORTANT
+    from app import app  # safety import
+
+    with app.app_context():
         user = User.query.get(user_id)
+
         if not user:
             send_message(psid, "❌ User not found.")
             return
