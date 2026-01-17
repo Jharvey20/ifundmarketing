@@ -346,7 +346,7 @@ def dashboard():
     if "user" not in session:
         return redirect("/signup")
 
-    user = User.query.filter_by(user_id=session["user"]).first()
+    user = User.query.get(session["user"])
     return render_template("dashboard.html", user=user)
 
 @app.route("/referral")
@@ -354,7 +354,7 @@ def referral():
     if "user" not in session:
         return redirect("/login")
 
-    user = User.query.filter_by(user_id=session["user"]).first()
+    user = User.query.get(session["user"])
     return render_template("referral.html", user=user)
 
 
@@ -363,7 +363,7 @@ def account():
     if "user" not in session:
         return redirect("/login")
 
-    user = User.query.filter_by(user_id=session["user"]).first()
+    user = User.query.get(session["user"])
     return render_template("account.html", user=user)
 
 def generate_hard_task():
@@ -445,7 +445,7 @@ def task():
     if "user" not in session:
         return redirect("/login")
 
-    user = User.query.filter_by(user_id=session["user"]).first()
+    user = User.query.get(session["user"])
 
     COOLDOWN = 30
     now = int(time.time())
@@ -502,7 +502,7 @@ def withdraw():
     if "user" not in session:
         return redirect("/login")
 
-    user = User.query.filter_by(user_id=session["user"]).first()
+    user = User.query.get(session["user"])
 
     if request.method == "POST":
         amount = float(request.form["amount"])
@@ -540,7 +540,7 @@ def my_withdrawals():
     if "user" not in session:
         return redirect("/login")
 
-    user = User.query.filter_by(user_id=session["user"]).first()
+    user = User.query.get(session["user"])
 
     withdrawals = Withdrawal.query.filter_by(
         user_id=user.user_id
@@ -557,7 +557,7 @@ def convert_points():
     if "user" not in session:
         return redirect("/login")
 
-    user = User.query.filter_by(user_id=session["user"]).first()
+    user = User.query.get(session["user"])
 
     # CHECK MINIMUM POINTS
     if user.points < 200:
@@ -581,7 +581,7 @@ def convert_page():
     if "user" not in session:
         return redirect("/login")
 
-    user = User.query.filter_by(user_id=session["user"]).first()
+    user = User.query.get(session["user"])
     return render_template("convert.html", user=user)
 
 @app.route("/about")
