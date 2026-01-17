@@ -334,7 +334,8 @@ def login():
             flash("Wrong password", "error")
             return redirect("/login")
 
-        session["user"] = user.id
+        session.clear()
+        session["user"] = user.id   # INTEGER
         flash("Login successful!", "success")
         return redirect("/dashboard")
 
