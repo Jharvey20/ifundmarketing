@@ -79,7 +79,6 @@ from sqlalchemy import func
 @app.route("/admin")
 @admin_required
 def admin_dashboard():
-    return render_template("admin/dashboard.html")
 
     # ==========================
     # GET ALL USERS
