@@ -635,13 +635,17 @@ def webhook():
     handle_webhook(data)
     return "ok", 200
 
+from sqlalchemy import text   # <<< REQUIRED
+
 @app.route("/activate-messenger", methods=["POST"])
+@login_required
 def activate_messenger():
     messenger_id = request.form.get("messenger_id", "").strip()
     user_id = session.get("user")
 
-    if not user_id:
-        return redirect(url_for("login"))
+    if not messenger_id:
+        flash("Messenger ID is required.", "error")
+        return redirect(url_for("messenger_connect"))
 
     result = db.session.execute(
         text("""
@@ -660,6 +664,10 @@ def activate_messenger():
 
     psid = messenger_id.replace("IFD-", "")
 
+    if not PAGE_ACCESS_TOKEN:
+        flash("Messenger bot not configured.", "error")
+        return redirect(url_for("dashboard"))
+
     try:
         send_messenger_dashboard(psid)
     except Exception as e:
@@ -669,6 +677,7 @@ def activate_messenger():
     return redirect(url_for("dashboard"))
 
 @app.route("/messenger")
+@login_required
 def messenger_connect():
     return render_template("messenger/connect.html")
 
