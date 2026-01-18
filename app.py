@@ -282,65 +282,60 @@ def home():
 
 @app.route("/signup", methods=["GET", "POST"])
 def signup():
-
-    # STORE REFERRER ON FIRST VISIT
     if request.method == "GET":
         ref = request.args.get("ref")
         if ref:
             session["referrer"] = ref
-        return render_template("signup.html")
+
+        return render_template(
+            "signup.html",
+            RECAPTCHA_SITE_KEY=os.environ.get("RECAPTCHA_SITE_KEY")
+        )
 
     # =========================
-    # RECAPTCHA VERIFY
+    # reCAPTCHA v3 VERIFY
     # =========================
-    recaptcha_response = request.form.get("g-recaptcha-response")
-    if not recaptcha_response:
-        flash("Please complete the captcha.", "error")
+    token = request.form.get("recaptcha_token")
+    if not token:
+        flash("Captcha missing.", "error")
         return redirect("/signup")
 
-    secret_key = os.environ.get("RECAPTCHA_SECRET_KEY")
     r = requests.post(
         "https://www.google.com/recaptcha/api/siteverify",
         data={
-            "secret": secret_key,
-            "response": recaptcha_response,
+            "secret": os.environ.get("RECAPTCHA_SECRET_KEY"),
+            "response": token,
             "remoteip": request.remote_addr
         }
     )
     result = r.json()
 
-    if not result.get("success"):
-        flash("Captcha verification failed.", "error")
+    if not result.get("success") or result.get("score", 0) < 0.3:
+        flash("Suspicious activity detected.", "error")
         return redirect("/signup")
 
     # =========================
     # EXISTING SIGNUP LOGIC
     # =========================
     code_input = request.form["activation_code"].strip()
-
-    code = ActivationCode.query.filter_by(
-        code=code_input,
-        is_used=0
-    ).first()
+    code = ActivationCode.query.filter_by(code=code_input, is_used=0).first()
 
     if not code:
-        flash("Invalid or already used activation code.")
+        flash("Invalid or used activation code.", "error")
         return redirect("/signup")
 
-    user_id = f"USR-{random.randint(10000,99999)}"
-    hashed_pw = generate_password_hash(request.form["password"])
+    user_id = f"USR{random.randint(10000,99999)}"
 
     new_user = User(
         user_id=user_id,
         username=request.form["username"],
         full_name=request.form["full_name"],
         email=request.form["email"],
-        password_hash=hashed_pw,
+        password_hash=generate_password_hash(request.form["password"]),
         activation_code=code.code
     )
 
     db.session.add(new_user)
-
     code.is_used = 1
     code.used_by = user_id
 
@@ -353,39 +348,39 @@ def signup():
             inviter.cash_balance += 50
 
     db.session.commit()
-
     session.pop("referrer", None)
-    session["user"] = user_id
 
+    flash("Account created successfully!", "success")
     return redirect("/login")
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
-
     if request.method == "GET":
-        return render_template("login.html")
+        return render_template(
+            "login.html",
+            RECAPTCHA_SITE_KEY=os.environ.get("RECAPTCHA_SITE_KEY")
+        )
 
     # =========================
-    # RECAPTCHA VERIFY
+    # reCAPTCHA v3 VERIFY
     # =========================
-    recaptcha_response = request.form.get("g-recaptcha-response")
-    if not recaptcha_response:
-        flash("Please complete the captcha.", "error")
+    token = request.form.get("recaptcha_token")
+    if not token:
+        flash("Captcha missing.", "error")
         return redirect("/login")
 
-    secret_key = os.environ.get("RECAPTCHA_SECRET_KEY")
     r = requests.post(
         "https://www.google.com/recaptcha/api/siteverify",
         data={
-            "secret": secret_key,
-            "response": recaptcha_response,
+            "secret": os.environ.get("RECAPTCHA_SECRET_KEY"),
+            "response": token,
             "remoteip": request.remote_addr
         }
     )
     result = r.json()
 
-    if not result.get("success"):
-        flash("Captcha verification failed.", "error")
+    if not result.get("success") or result.get("score", 0) < 0.3:
+        flash("Suspicious activity detected.", "error")
         return redirect("/login")
 
     # =========================
@@ -395,19 +390,13 @@ def login():
     password = request.form["password"]
 
     user = User.query.filter_by(username=username).first()
-
-    if not user:
-        flash("User not found.")
-        return redirect("/login")
-
-    if not check_password_hash(user.password_hash, password):
-        flash("Wrong password.", "error")
+    if not user or not check_password_hash(user.password_hash, password):
+        flash("Invalid credentials.", "error")
         return redirect("/login")
 
     session.clear()
     session["user"] = user.user_id
     flash("Login successful!", "success")
-
     return redirect("/dashboard")
 
 @app.route("/dashboard")
@@ -641,36 +630,38 @@ def color_task():
 
 @app.route("/withdraw", methods=["GET", "POST"])
 def withdraw():
-
     if "user" not in session:
         return redirect("/login")
 
     user = User.query.get(session["user"])
 
     if request.method == "GET":
-        return render_template("withdraw.html", user=user)
+        return render_template(
+            "withdraw.html",
+            user=user,
+            RECAPTCHA_SITE_KEY=os.environ.get("RECAPTCHA_SITE_KEY")
+        )
 
     # =========================
-    # RECAPTCHA VERIFY
+    # reCAPTCHA v3 VERIFY
     # =========================
-    recaptcha_response = request.form.get("g-recaptcha-response")
-    if not recaptcha_response:
-        flash("Please complete the captcha.", "error")
+    token = request.form.get("recaptcha_token")
+    if not token:
+        flash("Captcha missing.", "error")
         return redirect("/withdraw")
 
-    secret_key = os.environ.get("RECAPTCHA_SECRET_KEY")
     r = requests.post(
         "https://www.google.com/recaptcha/api/siteverify",
         data={
-            "secret": secret_key,
-            "response": recaptcha_response,
+            "secret": os.environ.get("RECAPTCHA_SECRET_KEY"),
+            "response": token,
             "remoteip": request.remote_addr
         }
     )
     result = r.json()
 
-    if not result.get("success"):
-        flash("Captcha verification failed.", "error")
+    if not result.get("success") or result.get("score", 0) < 0.3:
+        flash("Suspicious activity detected.", "error")
         return redirect("/withdraw")
 
     # =========================
@@ -682,11 +673,11 @@ def withdraw():
     notify_email = request.form["notify_email"]
 
     if amount < 300:
-        flash("Minimum withdrawal is ₱300", "error")
+        flash("Minimum withdrawal is ₱300.", "error")
         return redirect("/withdraw")
 
     if amount > user.cash_balance:
-        flash("Insufficient balance", "error")
+        flash("Insufficient balance.", "error")
         return redirect("/withdraw")
 
     w = Withdrawal(
@@ -698,7 +689,6 @@ def withdraw():
     )
 
     user.cash_balance -= amount
-
     db.session.add(w)
     db.session.commit()
 
