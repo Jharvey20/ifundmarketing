@@ -641,44 +641,6 @@ def color_task():
 
 @app.route("/withdraw", methods=["GET", "POST"])
 def withdraw():
-    if "user" not in session:
-        return redirect("/login")
-
-    user = User.query.get(session["user"])
-
-    if request.method == "POST":
-        amount = float(request.form["amount"])
-        method = request.form["method"]
-        account = request.form["account"]
-        notify_email = request.form["notify_email"]  # ✅ DITO
-
-        if amount < 300:
-            flash("Minimum withdrawal is ₱300", "error")
-            return redirect("/withdraw")
-
-        if amount > user.cash_balance:
-            flash("Insufficient balance", "error")
-            return redirect("/withdraw")
-
-        w = Withdrawal(
-            user_id=user.user_id,
-            amount=amount,
-            method=method,
-            account_info=account,
-            notify_email=notify_email
-        )
-
-        user.cash_balance -= amount  # 🔒 lock funds
-        db.session.add(w)
-        db.session.commit()
-
-        flash("Withdrawal request submitted!", "success")
-        return redirect("/dashboard")
-
-    return render_template("withdraw.html", user=user)
-
-@app.route("/withdraw", methods=["GET", "POST"])
-def withdraw():
 
     if "user" not in session:
         return redirect("/login")
