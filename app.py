@@ -5,8 +5,6 @@ import random
 import time
 import os
 import requests
-from messenger_bot import verify_user, send_messenger_dashboard
-from messenger_bot import handle_webhook
 from functools import wraps
 from flask import session, redirect, url_for
 from sqlalchemy import text
@@ -684,88 +682,6 @@ def privacy():
 def logout():
     session.clear()
     return redirect("/signup")
-
-import requests
-from flask import request
-
-PAGE_ACCESS_TOKEN = os.getenv("PAGE_ACCESS_TOKEN")
-VERIFY_TOKEN = os.getenv("VERIFY_TOKEN")
-
-def send_message(psid, text):
-    url = "https://graph.facebook.com/v18.0/me/messages"
-    headers = {"Content-Type": "application/json"}
-    payload = {
-        "recipient": {"id": psid},
-        "message": {"text": text},
-        "messaging_type": "RESPONSE"
-    }
-    params = {"access_token": PAGE_ACCESS_TOKEN}
-    requests.post(url, headers=headers, params=params, json=payload)
-
-VERIFY_TOKEN = os.getenv("VERIFY_TOKEN")
-
-@app.route("/webhook", methods=["GET"])
-def verify_webhook():
-    mode = request.args.get("hub.mode")
-    token = request.args.get("hub.verify_token")
-    challenge = request.args.get("hub.challenge")
-
-    if mode == "subscribe" and token == VERIFY_TOKEN:
-        return challenge, 200
-    return "Forbidden", 403
-
-
-@app.route("/webhook", methods=["POST"])
-def webhook():
-    data = request.get_json()
-    handle_webhook(data)
-    return "ok", 200
-
-from sqlalchemy import text   # <<< REQUIRED
-
-@app.route("/activate-messenger", methods=["POST"])
-@login_required
-def activate_messenger():
-    messenger_id = request.form.get("messenger_id", "").strip()
-    user_id = session.get("user")
-
-    if not messenger_id:
-        flash("Messenger ID is required.", "error")
-        return redirect(url_for("messenger_connect"))
-
-    result = db.session.execute(
-        text("""
-            SELECT id
-            FROM users
-            WHERE id = :uid
-            AND messenger_id = :mid
-            AND messenger_active = TRUE
-        """),
-        {"uid": user_id, "mid": messenger_id}
-    ).fetchone()
-
-    if not result:
-        flash("❌ Invalid or unverified Messenger ID", "error")
-        return redirect(url_for("messenger_connect"))
-
-    psid = messenger_id.replace("IFD-", "")
-
-    if not PAGE_ACCESS_TOKEN:
-        flash("Messenger bot not configured.", "error")
-        return redirect(url_for("dashboard"))
-
-    try:
-        send_messenger_dashboard(psid)
-    except Exception as e:
-        print("Messenger error:", e)
-
-    flash("✅ Messenger Activated! Check Messenger now.", "success")
-    return redirect(url_for("dashboard"))
-
-@app.route("/messenger")
-@login_required
-def messenger_connect():
-    return render_template("messenger/connect.html")
 
 # ======================
 # RUN SERVER
