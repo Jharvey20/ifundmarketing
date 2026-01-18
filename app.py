@@ -29,6 +29,7 @@ from models import (
 )
 
 from werkzeug.security import generate_password_hash, check_password_hash
+import requests
 
 # ======================
 # CREATE APP
@@ -281,88 +282,133 @@ def home():
 
 @app.route("/signup", methods=["GET", "POST"])
 def signup():
+
     # STORE REFERRER ON FIRST VISIT
     if request.method == "GET":
         ref = request.args.get("ref")
         if ref:
             session["referrer"] = ref
+        return render_template("signup.html")
 
-    if request.method == "POST":
-        code_input = request.form["activation_code"].strip()
+    # =========================
+    # RECAPTCHA VERIFY
+    # =========================
+    recaptcha_response = request.form.get("g-recaptcha-response")
+    if not recaptcha_response:
+        flash("Please complete the captcha.", "error")
+        return redirect("/signup")
 
-        # CHECK ACTIVATION CODE
-        code = ActivationCode.query.filter_by(
-            code=code_input,
-            is_used=0
-        ).first()
+    secret_key = os.environ.get("RECAPTCHA_SECRET_KEY")
+    r = requests.post(
+        "https://www.google.com/recaptcha/api/siteverify",
+        data={
+            "secret": secret_key,
+            "response": recaptcha_response,
+            "remoteip": request.remote_addr
+        }
+    )
+    result = r.json()
 
-        if not code:
-            flash("Invalid or already used activation code.")
-            return redirect("/signup")
+    if not result.get("success"):
+        flash("Captcha verification failed.", "error")
+        return redirect("/signup")
 
-        # CREATE USER
-        user_id = f"USR-{random.randint(10000,99999)}"
-        hashed_pw = generate_password_hash(request.form["password"])
+    # =========================
+    # EXISTING SIGNUP LOGIC
+    # =========================
+    code_input = request.form["activation_code"].strip()
 
-        new_user = User(
-            user_id=user_id,
-            username=request.form["username"],
-            full_name=request.form["full_name"],
-            email=request.form["email"],
-            password_hash=hashed_pw,
-            activation_code=code.code
-        )
+    code = ActivationCode.query.filter_by(
+        code=code_input,
+        is_used=0
+    ).first()
 
-        db.session.add(new_user)
+    if not code:
+        flash("Invalid or already used activation code.")
+        return redirect("/signup")
 
-        # LOCK ACTIVATION CODE
-        code.is_used = 1
-        code.used_by = user_id
+    user_id = f"USR-{random.randint(10000,99999)}"
+    hashed_pw = generate_password_hash(request.form["password"])
 
-        # REFERRAL BONUS
-        referrer_id = session.get("referrer")
-        if referrer_id:
-            inviter = User.query.filter_by(user_id=referrer_id).first()
+    new_user = User(
+        user_id=user_id,
+        username=request.form["username"],
+        full_name=request.form["full_name"],
+        email=request.form["email"],
+        password_hash=hashed_pw,
+        activation_code=code.code
+    )
 
-            # ❌ PREVENT SELF-REFERRAL
-            if inviter and inviter.user_id != user_id:
-                inviter.referrals += 1
-                inviter.referral_balance += 50.0
-                inviter.cash_balance += 50.0
+    db.session.add(new_user)
 
-        db.session.commit()
+    code.is_used = 1
+    code.used_by = user_id
 
-        # CLEAR REFERRER SESSION
-        session.pop("referrer", None)
+    referrer_id = session.get("referrer")
+    if referrer_id:
+        inviter = User.query.filter_by(user_id=referrer_id).first()
+        if inviter and inviter.user_id != user_id:
+            inviter.referrals += 1
+            inviter.referral_balance += 50
+            inviter.cash_balance += 50
 
-        # LOGIN USER
-        session["user"] = user_id
-        return redirect("/dashboard")
+    db.session.commit()
 
-    return render_template("signup.html")
+    session.pop("referrer", None)
+    session["user"] = user_id
+
+    return redirect("/login")
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
-    if request.method == "POST":
-        username = request.form["username"]
-        password = request.form["password"]
 
-        user = User.query.filter_by(username=username).first()
+    if request.method == "GET":
+        return render_template("login.html")
 
-        if not user:
-            flash("User not found.")
-            return redirect("/login")
+    # =========================
+    # RECAPTCHA VERIFY
+    # =========================
+    recaptcha_response = request.form.get("g-recaptcha-response")
+    if not recaptcha_response:
+        flash("Please complete the captcha.", "error")
+        return redirect("/login")
 
-        if not check_password_hash(user.password_hash, password):
-            flash("Wrong password", "error")
-            return redirect("/login")
+    secret_key = os.environ.get("RECAPTCHA_SECRET_KEY")
+    r = requests.post(
+        "https://www.google.com/recaptcha/api/siteverify",
+        data={
+            "secret": secret_key,
+            "response": recaptcha_response,
+            "remoteip": request.remote_addr
+        }
+    )
+    result = r.json()
 
-        session.clear()
-        session["user"] = user.id   # INTEGER
-        flash("Login successful!", "success")
-        return redirect("/dashboard")
+    if not result.get("success"):
+        flash("Captcha verification failed.", "error")
+        return redirect("/login")
 
-    return render_template("login.html")
+    # =========================
+    # EXISTING LOGIN LOGIC
+    # =========================
+    username = request.form["username"]
+    password = request.form["password"]
+
+    user = User.query.filter_by(username=username).first()
+
+    if not user:
+        flash("User not found.")
+        return redirect("/login")
+
+    if not check_password_hash(user.password_hash, password):
+        flash("Wrong password.", "error")
+        return redirect("/login")
+
+    session.clear()
+    session["user"] = user.user_id
+    flash("Login successful!", "success")
+
+    return redirect("/dashboard")
 
 @app.route("/dashboard")
 def dashboard():
@@ -631,22 +677,71 @@ def withdraw():
 
     return render_template("withdraw.html", user=user)
 
-@app.route("/my-withdrawals")
-def my_withdrawals():
+@app.route("/withdraw", methods=["GET", "POST"])
+def withdraw():
+
     if "user" not in session:
         return redirect("/login")
 
     user = User.query.get(session["user"])
 
-    withdrawals = Withdrawal.query.filter_by(
-        user_id=user.user_id
-    ).order_by(Withdrawal.requested_at.desc()).all()
+    if request.method == "GET":
+        return render_template("withdraw.html", user=user)
 
-    return render_template(
-        "my_withdrawals.html",
-        user=user,
-        withdrawals=withdrawals
+    # =========================
+    # RECAPTCHA VERIFY
+    # =========================
+    recaptcha_response = request.form.get("g-recaptcha-response")
+    if not recaptcha_response:
+        flash("Please complete the captcha.", "error")
+        return redirect("/withdraw")
+
+    secret_key = os.environ.get("RECAPTCHA_SECRET_KEY")
+    r = requests.post(
+        "https://www.google.com/recaptcha/api/siteverify",
+        data={
+            "secret": secret_key,
+            "response": recaptcha_response,
+            "remoteip": request.remote_addr
+        }
     )
+    result = r.json()
+
+    if not result.get("success"):
+        flash("Captcha verification failed.", "error")
+        return redirect("/withdraw")
+
+    # =========================
+    # EXISTING WITHDRAW LOGIC
+    # =========================
+    amount = float(request.form["amount"])
+    method = request.form["method"]
+    account = request.form["account"]
+    notify_email = request.form["notify_email"]
+
+    if amount < 300:
+        flash("Minimum withdrawal is ₱300", "error")
+        return redirect("/withdraw")
+
+    if amount > user.cash_balance:
+        flash("Insufficient balance", "error")
+        return redirect("/withdraw")
+
+    w = Withdrawal(
+        user_id=user.user_id,
+        amount=amount,
+        method=method,
+        account_info=account,
+        notify_email=notify_email
+    )
+
+    user.cash_balance -= amount
+
+    db.session.add(w)
+    db.session.commit()
+
+    flash("Withdrawal request submitted!", "success")
+    return redirect("/dashboard")
 
 @app.route("/convert", methods=["POST"])
 def convert_points():

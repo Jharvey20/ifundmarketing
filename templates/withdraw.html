@@ -1,9 +1,15 @@
 {% extends "base.html" %}
 {% block content %}
 
+<!-- reCAPTCHA SCRIPT -->
+<script src="https://www.google.com/recaptcha/api.js" async defer></script>
+
 <h2>💸 Withdraw Funds</h2>
 
-<p><strong>Available Balance:</strong> ₱{{ "%.2f"|format(user.cash_balance) }}</p>
+<p>
+  <strong>Available Balance:</strong>
+  ₱{{ "%.2f"|format(user.cash_balance) }}
+</p>
 
 <!-- WITHDRAWAL RULES -->
 <div class="card warning">
@@ -43,7 +49,8 @@
     name="account"
     placeholder="GCash / Bank account details"
     required
-  
+  >
+
   <label>Email for Notification</label>
   <input
     type="email"
@@ -52,6 +59,15 @@
     placeholder="Enter email to receive updates"
     required
   >
+
+  <!-- ✅ CAPTCHA (DAGDAG LANG) -->
+  <div style="margin: 15px 0;">
+    <div
+      class="g-recaptcha"
+      data-sitekey="6Lc2b04sAAAAAIOiTG6XfF5zKTAngx69A81UKRw2">
+    </div>
+  </div>
+
   <button type="submit" class="btn-primary">
     Request Withdrawal
   </button>
