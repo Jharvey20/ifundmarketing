@@ -1,29 +1,82 @@
-from flask import Flask, render_template, request, redirect, flash, session
-from werkzeug.security import generate_password_hash, check_password_hash
-from models import db, User, ActivationCode, Withdrawal, AdminFund
+# ======================
+# IMPORTS
+# ======================
+import os
 import random
 import time
-import os
-import requests
-from functools import wraps
-from flask import session, redirect, url_for
-from sqlalchemy import text
-from flask import Flask
-from models import db
+from datetime import datetime
 
-#==========
-# CREATE FLASK APP
-# ========================
+from flask import (
+    Flask,
+    render_template,
+    request,
+    redirect,
+    flash,
+    session,
+    url_for
+)
+
+from functools import wraps
+from sqlalchemy import text
+
+from models import (
+    db,
+    User,
+    ActivationCode,
+    Withdrawal,
+    AdminFund,
+    TaskLog
+)
+
+# ======================
+# CREATE APP
+# ======================
 app = Flask(__name__)
+
+# ======================
+# SECRET KEY (SAFE)
+# ======================
+app.secret_key = os.environ.get("SECRET_KEY", "dev-secret")
+
+# ======================
+# DATABASE CONFIG (RENDER)
+# ======================
+database_url = os.environ.get("DATABASE_URL")
+
+if not database_url:
+    raise RuntimeError("DATABASE_URL is not set")
+
+if database_url.startswith("postgres://"):
+    database_url = database_url.replace(
+        "postgres://",
+        "postgresql://",
+        1
+    )
+
+app.config["SQLALCHEMY_DATABASE_URI"] = database_url
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+
 db.init_app(app)
 
+with app.app_context():
+    db.create_all()
+
+# ======================
+# HELPERS
+# ======================
 def give_task_reward(user):
     earned = random.randint(1, 2)
     user.points += earned
+    db.session.commit()
     return earned
 
-# SECRET KEY (REQUIRED FOR SESSION)
-app.secret_key = os.environ["SECRET_KEY"]
+def login_required(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        if "user" not in session:
+            return redirect(url_for("login"))
+        return f(*args, **kwargs)
+    return decorated
 
 def admin_required(f):
     @wraps(f)
@@ -38,61 +91,20 @@ def admin_required(f):
         return f(*args, **kwargs)
     return decorated
 
-def login_required(f):
-    @wraps(f)
-    def decorated(*args, **kwargs):
-        if "user" not in session:
-            return redirect(url_for("login"))
-        return f(*args, **kwargs)
-    return decorated
-
 def can_do_task(user_id):
     log = TaskLog.query.filter_by(user_id=user_id).first()
     if not log:
         return True
+    return (datetime.utcnow() - log.last_task_at).seconds >= 30
 
-    return (datetime.utcnow() - log.last_task_at).seconds >= 15
-
-def update_task_log(user_id, platform):
+def update_task_log(user_id):
     log = TaskLog.query.filter_by(user_id=user_id).first()
     if not log:
-        log = TaskLog(user_id=user_id, platform=platform)
+        log = TaskLog(user_id=user_id)
         db.session.add(log)
 
     log.last_task_at = datetime.utcnow()
     db.session.commit()
-
-# ======================
-# CONFIGURATION
-# ======================
-import os
-
-database_url = os.environ.get("DATABASE_URL")
-
-if not database_url:
-    raise RuntimeError("DATABASE_URL is not set")
-
-if database_url.startswith("postgres://"):
-    database_url = database_url.replace("postgres://", "postgresql://")
-
-app.config["SQLALCHEMY_DATABASE_URI"] = database_url
-app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
-
-db.init_app(app)
-
-with app.app_context():
-    db.create_all()
-
-def send_message(psid, text):
-    url = "https://graph.facebook.com/v18.0/me/messages"
-    headers = {"Content-Type": "application/json"}
-    payload = {
-        "recipient": {"id": psid},
-        "message": {"text": text},
-        "messaging_type": "RESPONSE"
-    }
-    params = {"access_token": PAGE_ACCESS_TOKEN}
-    requests.post(url, headers=headers, params=params, json=payload)
 
 # ==========================
 # ADMIN ROUTES
