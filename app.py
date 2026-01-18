@@ -67,6 +67,13 @@ with app.app_context():
 # ======================
 # HELPERS
 # ======================
+def get_current_user():
+    uid = session.get("user")
+    if not isinstance(uid, int):
+        session.clear()
+        return None
+    return User.query.get(uid)
+
 def give_task_reward(user):
     earned = random.randint(1, 2)
     user.points += earned
@@ -87,7 +94,7 @@ def admin_required(f):
         if "user" not in session:
             return redirect(url_for("login"))
 
-        user = User.query.get(session["user"])
+        user = get_current_user()
         if not user or not user.is_admin:
             return redirect(url_for("dashboard"))
 
@@ -395,7 +402,7 @@ def login():
         return redirect("/login")
 
     session.clear()
-    session["user"] = user.user_id
+    session["user"] = user.id
     flash("Login successful!", "success")
     return redirect("/dashboard")
 
@@ -404,7 +411,7 @@ def dashboard():
     if "user" not in session:
         return redirect("/signup")
 
-    user = User.query.get(session["user"])
+    user = get_current_user()
     return render_template("dashboard.html", user=user)
 
 @app.route("/referral")
@@ -412,7 +419,7 @@ def referral():
     if "user" not in session:
         return redirect("/login")
 
-    user = User.query.get(session["user"])
+    user = get_current_user()
     return render_template("referral.html", user=user)
 
 
@@ -421,7 +428,7 @@ def account():
     if "user" not in session:
         return redirect("/login")
 
-    user = User.query.get(session["user"])
+    user = get_current_user()
     return render_template("account.html", user=user)
 
 def generate_hard_task():
@@ -522,7 +529,7 @@ def task():
     if "user" not in session:
         return redirect("/login")
 
-    user = User.query.get(session["user"])
+    user = get_current_user()
 
     COOLDOWN = 30
     now = int(time.time())
@@ -579,7 +586,7 @@ def color_task():
     if "user" not in session:
         return redirect("/login")
 
-    user = User.query.get(session["user"])
+    user = get_current_user()
 
     COOLDOWN = 30
     now = int(time.time())
@@ -633,7 +640,7 @@ def withdraw():
     if "user" not in session:
         return redirect("/login")
 
-    user = User.query.get(session["user"])
+    user = get_current_user()
 
     if request.method == "GET":
         return render_template(
@@ -700,7 +707,7 @@ def convert_points():
     if "user" not in session:
         return redirect("/login")
 
-    user = User.query.get(session["user"])
+    user = get_current_user()
 
     # CHECK MINIMUM POINTS
     if user.points < 200:
@@ -724,7 +731,7 @@ def convert_page():
     if "user" not in session:
         return redirect("/login")
 
-    user = User.query.get(session["user"])
+    user = get_current_user()
     return render_template("convert.html", user=user)
 
 @app.route("/about")
