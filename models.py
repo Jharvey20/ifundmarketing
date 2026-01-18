@@ -7,7 +7,7 @@ class ActivationCode(db.Model):
     __tablename__ = "activation_codes"
 
     id = db.Column(db.Integer, primary_key=True)
-    code = db.Column(db.String(20), unique=True, nullable=False)
+    code = db.Column(db.String(50), unique=True, nullable=False)
     is_used = db.Column(db.Integer, default=0)
     used_by = db.Column(db.String(50), nullable=True)
     used_at = db.Column(db.DateTime, nullable=True)
