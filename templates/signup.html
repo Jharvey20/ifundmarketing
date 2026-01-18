@@ -1,100 +1,69 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Sign Up - iFundMarketingBot</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='auth.css') }}">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sign Up - iFundMarketingBot</title>
+
+  <link rel="stylesheet" href="{{ url_for('static', filename='auth.css') }}">
+
+  <!-- reCAPTCHA v3 -->
+  <script src="https://www.google.com/recaptcha/api.js?render={{ RECAPTCHA_SITE_KEY }}"></script>
 </head>
 <body>
 
 <div class="auth-container page-enter">
-    <div class="auth-card">
-        <h2>Create Account</h2>
-        <p class="subtitle">Activate your iFund Web Bot account</p>
+  <div class="auth-card">
+    <h2>Create Account</h2>
+    <p class="subtitle">Activate your iFund Web Bot account</p>
 
-        {% with messages = get_flashed_messages() %}
-        {% if messages %}
-            <div class="alert">{{ messages[0] }}</div>
-        {% endif %}
-        {% endwith %}
+    {% with messages = get_flashed_messages() %}
+      {% if messages %}
+        <div class="alert">{{ messages[0] }}</div>
+      {% endif %}
+    {% endwith %}
 
-        <form method="POST">
+    <form method="POST" id="signupForm">
 
-            <div class="field-with-tooltip">
-                <input
-                    type="text"
-                    name="activation_code"
-                    id="activationCode"
-                    placeholder="Activation Code"
-                    required
-                    oninput="checkActivation()"
-                >
-                <span class="tooltip-icon">?</span>
-                <div class="tooltip-text">
-                    This activation code is required to create an account.<br>
-                    Get one from an authorized iFundBot activator.
-                </div>
-            </div>
+      <input type="text" name="activation_code" id="activationCode"
+             placeholder="Activation Code" required oninput="checkActivation()">
 
-            <input type="text" name="username" placeholder="Username" required>
-            <input type="text" name="full_name" placeholder="Full Name" required>
-            <input type="email" name="email" placeholder="Email" required>
-            <input type="password" name="password" placeholder="Password" required>
+      <input type="text" name="username" placeholder="Username" required>
+      <input type="text" name="full_name" placeholder="Full Name" required>
+      <input type="email" name="email" placeholder="Email" required>
+      <input type="password" name="password" placeholder="Password" required>
 
-            <!-- GOOGLE RECAPTCHA -->
-            <div class="g-recaptcha"
-                 data-sitekey="6Lc2b04sAAAAAIOiTG6XfF5zKTAngx69A81UKRw2">
-            </div>
+      <!-- reCAPTCHA token -->
+      <input type="hidden" name="recaptcha_token" id="recaptcha_token">
 
-            <button type="submit" id="signupBtn" disabled>
-                Sign Up
-            </button>
-        </form>
+      <button type="submit" id="signupBtn" disabled>Sign Up</button>
+    </form>
 
-        <p class="switch">
-            Already have an account?
-            <a href="/login">Log in your account</a>
-        </p>
-    </div>
+    <p class="switch">
+      Already have an account?
+      <a href="/login">Log in your account</a>
+    </p>
+  </div>
 </div>
 
 <script>
 function checkActivation() {
-    const code = document.getElementById("activationCode").value.trim();
-    const btn = document.getElementById("signupBtn");
-    btn.disabled = code.length === 0;
+  const code = document.getElementById("activationCode").value.trim();
+  document.getElementById("signupBtn").disabled = code.length === 0;
 }
+
+document.getElementById("signupForm").addEventListener("submit", function (e) {
+  e.preventDefault();
+
+  grecaptcha.ready(function () {
+    grecaptcha.execute("{{ RECAPTCHA_SITE_KEY }}", { action: "signup" })
+      .then(function (token) {
+        document.getElementById("recaptcha_token").value = token;
+        document.getElementById("signupForm").submit();
+      });
+  });
+});
 </script>
-
-{% if success %}
-<div class="success-overlay">
-    <div class="success-card page-enter">
-        <h2>✅ {{ success_title }}</h2>
-        <p>{{ success_message }}</p>
-        <a href="{{ success_link }}">
-            <button>{{ success_button }}</button>
-        </a>
-    </div>
-</div>
-{% endif %}
-
-{% with messages = get_flashed_messages() %}
-{% if 'signup_success' in messages %}
-<div class="success-overlay">
-    <div class="success-card page-enter">
-        <h2>🎉 Registration Complete</h2>
-        <p>Your account has been created successfully.</p>
-        <a href="/login">
-            <button>Back to Login</button>
-        </a>
-    </div>
-</div>
-{% endif %}
-{% endwith %}
-
-<!-- CAPTCHA SCRIPT -->
-<script src="https://www.google.com/recaptcha/api.js" async defer></script>
 
 </body>
 </html>

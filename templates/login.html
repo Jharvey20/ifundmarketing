@@ -1,73 +1,58 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Login - MathBot</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='auth.css') }}">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login - MathBot</title>
+
+  <link rel="stylesheet" href="{{ url_for('static', filename='auth.css') }}">
+
+  <!-- reCAPTCHA v3 -->
+  <script src="https://www.google.com/recaptcha/api.js?render={{ RECAPTCHA_SITE_KEY }}"></script>
 </head>
 <body>
 
 <div class="auth-container">
-    <div class="auth-card">
-        <h2>Welcome Back</h2>
-        <p class="subtitle">Log in to your MathBot account</p>
+  <div class="auth-card">
+    <h2>Welcome Back</h2>
+    <p class="subtitle">Log in to your MathBot account</p>
 
-        {% with messages = get_flashed_messages() %}
-        {% if messages %}
-            <div class="alert">{{ messages[0] }}</div>
-        {% endif %}
-        {% endwith %}
+    {% with messages = get_flashed_messages() %}
+      {% if messages %}
+        <div class="alert">{{ messages[0] }}</div>
+      {% endif %}
+    {% endwith %}
 
-        <form method="POST">
-            <input type="text" name="username" placeholder="Username" required>
-            <input type="password" name="password" placeholder="Password" required>
+    <form method="POST" id="loginForm">
+      <input type="text" name="username" placeholder="Username" required>
+      <input type="password" name="password" placeholder="Password" required>
 
-            <!-- GOOGLE RECAPTCHA -->
-            <div class="g-recaptcha"
-                 data-sitekey="6Lc2b04sAAAAAIOiTG6XfF5zKTAngx69A81UKRw2">
-            </div>
+      <!-- reCAPTCHA token -->
+      <input type="hidden" name="recaptcha_token" id="recaptcha_token">
 
-            <button type="submit">Log In</button>
-        </form>
+      <button type="submit">Log In</button>
+    </form>
 
-        <p class="switch">
-            Don't have an account?
-            <a href="/signup">Create one</a>
-        </p>
-    </div>
+    <p class="switch">
+      Don't have an account?
+      <a href="/signup">Create one</a>
+    </p>
+  </div>
 </div>
 
-{% if success %}
-<div class="success-overlay">
-    <div class="success-card page-enter">
-        <h2>✅ {{ success_title }}</h2>
-        <p>{{ success_message }}</p>
-        <a href="{{ success_link }}">
-            <button>{{ success_button }}</button>
-        </a>
-    </div>
-</div>
-{% endif %}
+<script>
+document.getElementById("loginForm").addEventListener("submit", function (e) {
+  e.preventDefault();
 
-{% with messages = get_flashed_messages(with_categories=true) %}
-{% for category, message in messages %}
-{% if message == "login_success" %}
-<div class="success-overlay">
-    <div class="success-card page-enter">
-        <h2>🎉 Welcome Back!</h2>
-        <p>Login successful.</p>
-        <a href="/dashboard">
-            <button>Continue</button>
-        </a>
-    </div>
-</div>
-{% endif %}
-{% endfor %}
-{% endwith %}
-
-<!-- CAPTCHA SCRIPT -->
-<script src="https://www.google.com/recaptcha/api.js" async defer></script>
+  grecaptcha.ready(function () {
+    grecaptcha.execute("{{ RECAPTCHA_SITE_KEY }}", { action: "login" })
+      .then(function (token) {
+        document.getElementById("recaptcha_token").value = token;
+        document.getElementById("loginForm").submit();
+      });
+  });
+});
+</script>
 
 </body>
 </html>
