@@ -159,45 +159,45 @@ def admin_dashboard():
             "balance": u.cash_balance,
             "referrals": u.referrals,
             "total_payouts": total_payouts,
-            # rank is based on lifetime earnings
             "rank_score": u.cash_balance + total_payouts
         })
 
-    # SORT HIGHEST EARNINGS FIRST
+    # SORT BY LIFETIME EARNINGS
     leaderboard.sort(
         key=lambda x: x["rank_score"],
         reverse=True
     )
 
-    # ASSIGN RANK NUMBERS
+    # ASSIGN RANKS
     for i, u in enumerate(leaderboard, start=1):
         u["rank"] = i
 
     # ==========================
     # DASHBOARD METRICS
     # ==========================
-
-    # Member Earnings = sum of all user balances
     member_earnings = sum(u["balance"] for u in leaderboard)
-
-    # Total Cashouts = sum of approved payouts
     total_cashouts = sum(u["total_payouts"] for u in leaderboard)
 
     total_funds = db.session.query(
         func.coalesce(func.sum(AdminFund.amount), 0)
     ).scalar()
 
-    # ===== WARNING CHECK =====
     funds_warning = total_funds < member_earnings
+
+    # ==========================
+    # GENERATED ACTIVATION CODES
+    # ==========================
+    generated_codes = session.pop("generated_codes", [])
 
     return render_template(
         "admin/dashboard.html",
-        total_cashouts=total_cashouts,
         total_users=len(users),
         leaderboard=leaderboard,
+        total_cashouts=total_cashouts,
         total_funds=total_funds,
         member_earnings=member_earnings,
         funds_warning=funds_warning,
+        generated_codes=generated_codes
     )
 
 @app.route("/admin/withdrawals")

@@ -3,8 +3,8 @@
 
 {% if funds_warning %}
 <div class="alert danger">
-  ⚠️ <strong>Warning:</strong>  
-  Admin funds are <strong>LOW</strong> compared to member earnings.  
+  ⚠️ <strong>Warning:</strong>
+  Admin funds are <strong>LOW</strong> compared to member earnings.
   Please add funds to avoid payout issues.
 </div>
 {% endif %}
@@ -37,14 +37,17 @@
 
 <div class="card">
   <h3>Generate Activation Codes</h3>
+
   <form method="POST" action="/admin/generate-codes">
     <input type="number" name="count" min="1" required>
     <button type="submit">Generate</button>
   </form>
 
-  {% if session.generated_codes %}
-    <textarea rows="5" style="width:100%;">
-{% for c in session.generated_codes %}{{ c }}
+  {% if generated_codes %}
+    <h4>Generated Codes (Copy)</h4>
+    <textarea rows="6" style="width:100%;" readonly>
+{% for c in generated_codes %}
+{{ c }}
 {% endfor %}
     </textarea>
   {% endif %}
