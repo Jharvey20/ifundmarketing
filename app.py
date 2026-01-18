@@ -30,6 +30,8 @@ from models import (
 
 from werkzeug.security import generate_password_hash, check_password_hash
 import requests
+import secrets
+import string
 
 # ======================
 # CREATE APP
@@ -240,18 +242,31 @@ def process_withdraw(w_id, action):
 
     return redirect("/admin/withdrawals")
 
+import secrets
+import string
 
 @app.route("/admin/generate-codes", methods=["POST"])
 @admin_required
 def generate_codes():
-    
     count = int(request.form["count"])
     codes = []
 
+    alphabet = string.ascii_letters + string.digits  # a-z A-Z 0-9
+
     for _ in range(count):
-        code = f"ACT-{random.randint(100000,999999)}"
-        db.session.add(ActivationCode(code=code))
-        codes.append(code)
+        while True:
+            random_part = ''.join(secrets.choice(alphabet) for _ in range(46))
+            code_value = f"IFD-{random_part}"  # TOTAL = 50 chars
+
+            exists = db.session.query(
+                ActivationCode.id
+            ).filter_by(code=code_value).first()
+
+            if not exists:
+                break
+
+        db.session.add(ActivationCode(code=code_value))
+        codes.append(code_value)
 
     db.session.commit()
     session["generated_codes"] = codes
