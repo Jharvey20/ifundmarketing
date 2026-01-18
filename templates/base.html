@@ -19,9 +19,21 @@
 <!-- SIDEBAR -->
 <div id="menu" class="sidebar">
 
+  <!-- DASHBOARD -->
   <a href="/dashboard">Dashboard</a>
-  <a href="/task">Do Math Task</a>
-  <a href="{{ url_for('messenger_connect') }}">Activate Messenger</a>
+
+  <!-- TASKS DROPDOWN -->
+  <div class="menu-group">
+    <span class="menu-title" onclick="toggleSub('task-sub')">
+      Tasks ▾
+    </span>
+    <div id="task-sub" class="submenu">
+      <a href="/task">Math Task</a>
+      <a href="/color-task">Color Task</a>
+    </div>
+  </div>
+
+  <!-- OTHER LINKS -->
   <a href="/convert-page">Convert Points</a>
   <a href="/referral">Referral</a>
 

@@ -19,6 +19,11 @@ from models import db
 app = Flask(__name__)
 db.init_app(app)
 
+def give_task_reward(user):
+    earned = random.randint(1, 2)
+    user.points += earned
+    return earned
+
 # SECRET KEY (REQUIRED FOR SESSION)
 app.secret_key = os.environ["SECRET_KEY"]
 
@@ -444,6 +449,25 @@ def generate_hard_task():
 
     return question, answer
 
+def generate_color_task():
+    colors = [
+        "red", "blue", "green", "yellow", "orange",
+        "purple", "pink", "brown", "black", "white",
+        "gray", "cyan", "magenta", "lime", "teal"
+    ]
+
+    sequence = random.sample(colors, 6)
+    index = random.randint(1, 6)
+
+    question = (
+        f"Memorize the colors:\n"
+        f"{', '.join(sequence)}\n\n"
+        f"What is the {index}th color?"
+    )
+
+    answer = sequence[index - 1]
+    return question, answer
+
 import random
 
 @app.route("/task", methods=["GET", "POST"])
@@ -498,6 +522,60 @@ def task():
 
     return render_template(
         "task.html",
+        user=user,
+        question=question,
+        remaining=0
+    )
+
+@app.route("/color-task", methods=["GET", "POST"])
+def color_task():
+    if "user" not in session:
+        return redirect("/login")
+
+    user = User.query.get(session["user"])
+
+    COOLDOWN = 30
+    now = int(time.time())
+    last_time = session.get("last_color_task_time", 0)
+    remaining = COOLDOWN - (now - last_time)
+
+    # =========================
+    # SUBMIT ANSWER
+    # =========================
+    if request.method == "POST":
+        if remaining > 0:
+            flash("Please wait 30 seconds before next task", "info")
+            return redirect("/color-task")
+
+        correct = session.get("color_correct")
+        user_answer = request.form.get("answer", "").lower().strip()
+
+        if user_answer == correct:
+            earned = give_task_reward(user)
+            flash(f"Correct! +{earned} points 🎉", "success")
+        else:
+            flash("Wrong answer ❌", "error")
+
+        session["last_color_task_time"] = now
+        db.session.commit()
+        return redirect("/color-task")
+
+    # =========================
+    # SHOW TASK / COOLDOWN
+    # =========================
+    if remaining > 0:
+        return render_template(
+            "color_task.html",
+            user=user,
+            question=None,
+            remaining=remaining
+        )
+
+    question, answer = generate_color_task()
+    session["color_correct"] = answer
+
+    return render_template(
+        "color_task.html",
         user=user,
         question=question,
         remaining=0
